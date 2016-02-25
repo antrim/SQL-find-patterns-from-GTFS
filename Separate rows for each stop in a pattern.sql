@@ -1,3 +1,4 @@
+WITH result_set AS(
 WITH trip_patterns AS (
 SELECT pattern_id,row_number() over() as timed_pattern_id,MIN(trips.trip_id) as one_trip,string_agg( trips.trip_id::text, ', ' ORDER BY sequences.min_arrival_time ) AS trips_list, sequences.stops_pattern, stop_time_intervals,trips.agency_id,routes.route_id,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign,time_intervals_result.min_arrival_time,time_intervals_result.min_departure_time
 FROM trips
@@ -44,3 +45,5 @@ CASE WHEN stop_times.departure_time IS NOT NULL THEN (stop_times.departure_time 
 one_trip,trips_list,stops_pattern,stop_time_intervals,trip_patterns.agency_id,route_id,route_short_name,route_long_name,direction_label,headsign FROM trip_patterns
 LEFT JOIN stop_times ON trip_patterns.one_trip = stop_times.trip_id
 ORDER BY pattern_id,timed_pattern_id ASC, stop_times.stop_sequence ASC
+)
+SELECT COUNT(Distinct pattern_id) from result_set
