@@ -3,6 +3,10 @@ I need to distill to these tables:
 * Existing:
 	route, direction, etc.
 	calendar stuff
+OK, here is the plan -- try to use the dense_rank() function to generate identifiers for all of this below
+- we can either:
+	- import all of this and then normalize
+	- work backwards to pull out separate queries that result in separate, normalized data tables
 * Pattern
 * Pattern_order // shit, i need to figure out how to deal with timed patterns and patterns separately
 * Pattern_timed
