@@ -1,3 +1,4 @@
+WITH trip_patterns AS (
 SELECT MIN(pattern_id) as pattern_id,MIN(trips.trip_id) as one_trip,string_agg( trips.trip_id::text, ', ' ORDER BY sequences.min_arrival_time ) AS trips_list, sequences.stops_pattern, stop_time_intervals,trips.agency_id,routes.route_id,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign
 FROM trips
 INNER JOIN (
@@ -26,9 +27,13 @@ INNER JOIN
 ) AS time_intervals_result
 
 ON sequences.trip_id = time_intervals_result.trip_id
+
 LEFT JOIN routes on trips.route_id = routes.route_id
 LEFT JOIN directions ON trips.direction_id = directions.direction_id
 LEFT JOIN headsigns on trips.headsign_id = headsigns.headsign_id
 
 WHERE trips.agency_id IN (1,3,267)
-GROUP BY stops_pattern,stop_time_intervals,trips.agency_id,routes.route_id,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign
+GROUP BY stops_pattern,stop_time_intervals,trips.agency_id,routes.route_id,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign )  
+
+SELECT stop_times.stop_id,pattern_id,one_trip,trips_list,stops_pattern,stop_time_intervals,trip_patterns.agency_id,route_id,route_short_name,route_long_name,direction_label,headsign FROM trip_patterns
+LEFT JOIN stop_times ON trip_patterns.one_trip = stop_times.trip_id
