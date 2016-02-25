@@ -1,0 +1,10 @@
+// ok what is the next thing that i need to do?
+I need to distill to these tables:
+* Existing:
+	route, direction, etc.
+	calendar stuff
+* Pattern
+* Pattern_order // shit, i need to figure out how to deal with timed patterns and patterns separately
+* Pattern_timed
+* Pattern_stop_time
+* Schedule
