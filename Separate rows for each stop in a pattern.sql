@@ -1,9 +1,10 @@
 WITH trip_patterns AS (
-SELECT MIN(timed_pattern_id) as timed_pattern_id,MIN(trips.trip_id) as one_trip,string_agg( trips.trip_id::text, ', ' ORDER BY sequences.min_arrival_time ) AS trips_list, sequences.stops_pattern, stop_time_intervals,trips.agency_id,routes.route_id,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign,time_intervals_result.min_arrival_time,time_intervals_result.min_departure_time,
+SELECT MIN(timed_pattern_id) as timed_pattern_id,MIN(trips.trip_id) as one_trip,string_agg( trips.trip_id::text, ', ' ORDER BY sequences.min_arrival_time ) AS trips_list, sequences.stops_pattern, stop_time_intervals,trips.agency_id,routes.route_id,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign,time_intervals_result.min_arrival_time,time_intervals_result.min_departure_time, pattern_id
 FROM trips
 INNER JOIN (
 
-	 SELECT  string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern, stop_times.trip_id, MIN( stop_times.arrival_time ) AS min_arrival_time
+	 SELECT  string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern, stop_times.trip_id, MIN( stop_times.arrival_time ) AS min_arrival_time, row_number() over() as pattern_id
+
 	 FROM stop_times
 	 WHERE stop_times.agency_id IN (1,3,267)
 	 GROUP BY stop_times.trip_id
