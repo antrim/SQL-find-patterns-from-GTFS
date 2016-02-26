@@ -56,7 +56,7 @@ SELECT unique_patterns.stops_pattern,row_number() over() as pattern_id from uniq
 
 )
 
-SELECT timed_patterns.agency_id,stop_times.stop_id, timed_pattern_id::text || ' - ' || pattern_id::text AS concat_pattern,
+SELECT timed_patterns.agency_id,stop_times.stop_id, stop_time_intervals::text || ' - ' || stop_patterns.stops_pattern::text AS concat_pattern,
 dense_rank() over (partition by timed_pattern_id order by stop_times.stop_sequence) as stop_order,
 timed_pattern_id,
 stop_patterns.pattern_id,
