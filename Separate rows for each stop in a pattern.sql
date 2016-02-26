@@ -1,9 +1,12 @@
 WITH result_set AS(
 WITH timed_patterns AS (
 
-WITH timed_patterns_sub AS ( 
+WITH timed_patterns_sub AS (
 
-SELECT MIN(trips.trip_id) as one_trip,string_agg( trips.trip_id::text, ', ' ORDER BY sequences.min_arrival_time ) AS trips_list, sequences.stops_pattern, arrival_time_intervals,departure_time_intervals,trips.agency_id,routes.route_id,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign
+
+ 
+WITH pattern_time_intervals AS(
+SELECT MIN(trips.trip_id) as one_trip,string_agg( trips.trip_id::text, ', ' ORDER BY sequences.min_arrival_time ) AS trips_list, sequences.stops_pattern, arrival_time_intervals,departure_time_intervals,trips.agency_id,trips.route_id
 FROM trips
 INNER JOIN (
 
@@ -37,12 +40,15 @@ INNER JOIN
 
 ON sequences.trip_id = time_intervals_result.trip_id
 
-LEFT JOIN routes on trips.route_id = routes.route_id
-LEFT JOIN directions ON trips.direction_id = directions.direction_id
-LEFT JOIN headsigns on trips.headsign_id = headsigns.headsign_id
 
 WHERE trips.agency_id IN (392)
-GROUP BY stops_pattern,arrival_time_intervals,departure_time_intervals,trips.agency_id,routes.route_id,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign
+GROUP BY stops_pattern,arrival_time_intervals,departure_time_intervals,trips.agency_id,trips.route_id
+)
+SELECT pattern_time_intervals.* , MIN( stop_times.arrival_time ) AS min_arrival_time, MIN( stop_times.departure_time) AS min_departure_time
+FROM pattern_time_intervals
+inner join  stop_times on pattern_time_intervals.one_trip = stop_times.trip_id 
+WHERE stop_times.agency_id = 392
+group by  one_trip,trips_list,stops_pattern, arrival_time_intervals,departure_time_intervals,pattern_time_intervals.agency_id,route_id
 
 ) select row_number() over() as timed_pattern_id, * from timed_patterns_sub ),
 
@@ -66,7 +72,7 @@ timed_pattern_id,
 stop_patterns.pattern_id,
 CASE WHEN stop_times.arrival_time IS NOT NULL THEN (stop_times.arrival_time - min_arrival_time)::text END as arrival_time,
 CASE WHEN stop_times.departure_time IS NOT NULL THEN (stop_times.departure_time - min_departure_time)::text END as departure_time,
-one_trip,trips_list,stop_patterns.stops_pattern,arrival_time_intervals,departure_time_intervals,route_id,route_short_name,route_long_name,direction_label,headsign FROM timed_patterns
+one_trip,trips_list,stop_patterns.stops_pattern,arrival_time_intervals,departure_time_intervals,route_id FROM timed_patterns
 LEFT JOIN stop_times ON timed_patterns.one_trip = stop_times.trip_id
 inner JOIN stop_patterns ON timed_patterns.stops_pattern = stop_patterns.stops_pattern
 ORDER BY pattern_id,timed_pattern_id ASC, stop_times.stop_sequence ASC
