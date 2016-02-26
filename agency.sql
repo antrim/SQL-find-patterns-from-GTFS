@@ -1,3 +1,4 @@
+WITH result_set AS (
 WITH timed_patterns AS (
 
 WITH timed_patterns_sub AS (
@@ -68,7 +69,7 @@ SELECT unique_patterns.stops_pattern,row_number() over() as pattern_id from uniq
 
 )
 
-SELECT timed_patterns.agency_id,agency.agency_name,routes.route_short_name,routes.route_long_name,directions.direction_label,trips.direction_id,headsigns.headsign,stop_times.stop_id,
+SELECT timed_patterns.agency_id,agency.agency_name,routes.route_short_name,routes.route_long_name,directions.direction_id,directions.direction_label,headsigns.headsign,stop_times.stop_id,
 dense_rank() over (partition by timed_pattern_id order by stop_times.stop_sequence) as stop_order,
 timed_pattern_id,
 stop_patterns.pattern_id,
@@ -83,3 +84,7 @@ left join directions on trips.direction_id = directions.direction_id
 left join headsigns on trips.headsign_id = headsigns.headsign_id
 inner join agency on stop_times.agency_id = agency.agency_id
 ORDER BY pattern_id,timed_pattern_id ASC, stop_times.stop_sequence ASC
+)
+SELECT DISTINCT  agency_id, timed_pattern_id, stop_order, arrival_time, departure_time, pickup_type, drop_off_type
+FROM result_set
+ORDER BY agency_id, timed_pattern_id, stop_order
