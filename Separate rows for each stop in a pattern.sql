@@ -68,12 +68,12 @@ SELECT unique_patterns.stops_pattern,row_number() over() as pattern_id from uniq
 
 )
 
-SELECT timed_patterns.agency_id,agency.agency_name,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign,stop_times.stop_id, arrival_time_intervals::text || departure_time_intervals::text || ' - ' || stop_patterns.stops_pattern::text AS concat_pattern,
+SELECT timed_patterns.agency_id,agency.agency_name,routes.route_short_name,routes.route_long_name,directions.direction_label,headsigns.headsign,stop_times.stop_id,
 dense_rank() over (partition by timed_pattern_id order by stop_times.stop_sequence) as stop_order,
 timed_pattern_id,
 stop_patterns.pattern_id,
 CASE WHEN stop_times.arrival_time IS NOT NULL THEN (stop_times.arrival_time - min_arrival_time)::text END as arrival_time,
-CASE WHEN stop_times.departure_time IS NOT NULL THEN (stop_times.departure_time - min_departure_time)::text END as departure_time,
+CASE WHEN stop_times.departure_time IS NOT NULL THEN (stop_times.departure_time - min_departure_time)::text END as departure_time,pickup_type,drop_off_type,
 one_trip,trips_list,stop_patterns.stops_pattern,arrival_time_intervals,departure_time_intervals,trips.route_id FROM timed_patterns
 LEFT JOIN stop_times ON timed_patterns.one_trip = stop_times.trip_id
 inner JOIN stop_patterns ON timed_patterns.stops_pattern = stop_patterns.stops_pattern
