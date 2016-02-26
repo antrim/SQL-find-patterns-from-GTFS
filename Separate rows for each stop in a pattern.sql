@@ -1,4 +1,3 @@
-WITH result_set AS(
 WITH timed_patterns AS (
 
 WITH timed_patterns_sub AS (
@@ -13,7 +12,7 @@ INNER JOIN (
 	 SELECT  string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern, stop_times.trip_id, MIN( stop_times.arrival_time ) AS min_arrival_time
 
 	 FROM stop_times
-	 WHERE stop_times.agency_id IN (392)
+	 WHERE stop_times.agency_id IN (1,3,267,392)
 	 GROUP BY stop_times.trip_id
 	 ) AS sequences ON trips.trip_id = sequences.trip_id
 
@@ -31,23 +30,23 @@ INNER JOIN
 		 INNER JOIN (
 		 SELECT MIN( arrival_time ) AS min_arrival_time, MIN( departure_time ) AS min_departure_time,  trip_id
 		 FROM stop_times
-		 WHERE agency_id IN (392)
+		 WHERE agency_id IN (1,3,267,392)
 		 GROUP BY stop_times.trip_id
 		 ) min_trip_times ON stop_times.trip_id = min_trip_times.trip_id
-	 WHERE stop_times.agency_id in (392)
+	 WHERE stop_times.agency_id in (1,3,267,392)
 	 GROUP BY min_trip_times.trip_id,min_arrival_time,min_departure_time
 	) AS time_intervals_result
 
 ON sequences.trip_id = time_intervals_result.trip_id
 
 
-WHERE trips.agency_id IN (392)
+WHERE trips.agency_id IN (1,3,267,392)
 GROUP BY stops_pattern,arrival_time_intervals,departure_time_intervals,trips.agency_id,trips.route_id
 )
 SELECT pattern_time_intervals.* , MIN( stop_times.arrival_time ) AS min_arrival_time, MIN( stop_times.departure_time) AS min_departure_time
 FROM pattern_time_intervals
 inner join  stop_times on pattern_time_intervals.one_trip = stop_times.trip_id 
-WHERE stop_times.agency_id = 392
+WHERE stop_times.agency_id IN (1,3,267,392)
 group by  one_trip,trips_list,stops_pattern, arrival_time_intervals,departure_time_intervals,pattern_time_intervals.agency_id,route_id
 
 ) select row_number() over() as timed_pattern_id, * from timed_patterns_sub ),
@@ -60,7 +59,7 @@ SELECT DISTINCT string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.s
 
 	 FROM stop_times
 	 inner join trips on stop_times.trip_id = trips.trip_id
-	 WHERE trips.agency_id IN (392,392) AND trips.based_on IS NULL
+	 WHERE trips.agency_id IN (1,3,267,392,1,3,267,392) AND trips.based_on IS NULL
 	 GROUP BY stop_times.trip_id)
 SELECT unique_patterns.stops_pattern,row_number() over() as pattern_id from unique_patterns
 
@@ -76,4 +75,3 @@ one_trip,trips_list,stop_patterns.stops_pattern,arrival_time_intervals,departure
 LEFT JOIN stop_times ON timed_patterns.one_trip = stop_times.trip_id
 inner JOIN stop_patterns ON timed_patterns.stops_pattern = stop_patterns.stops_pattern
 ORDER BY pattern_id,timed_pattern_id ASC, stop_times.stop_sequence ASC
-) SELECT COUNT(DISTINCT timed_pattern_id),COUNT(DISTINCT concat_pattern),COUNT(DISTINCT pattern_id),COUNT(DISTINCT stops_pattern) FROM result_set
