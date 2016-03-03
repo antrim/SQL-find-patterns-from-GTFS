@@ -1,0 +1,3 @@
+SELECT DISTINCT  agency_id, direction_id, direction_label
+FROM migration_timed_pattern_stops_nonnormalized
+ORDER BY agency_id, direction_id
