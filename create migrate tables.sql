@@ -1,4 +1,4 @@
-CREATE TABLE "public"."migrate_agency" ( 
+CREATE TABLE "public"."migrate_play_agency" ( 
 	"agency_id" Integer DEFAULT nextval('agency_agency_id_seq'::regclass) NOT NULL,
 	"agency_id_import" Character Varying( 100 ) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
 	"agency_url" Character Varying( 255 ) COLLATE "pg_catalog"."default" DEFAULT ''::character varying NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE "public"."migrate_agency" (
 	"no_frequencies" Boolean DEFAULT true NOT NULL,
 	PRIMARY KEY ( "agency_id" ) );
  
- CREATE TABLE "public"."migrate_directions" ( 
+ CREATE TABLE "public"."migrate_play_directions" ( 
 	"direction_id" Integer DEFAULT nextval('directions_direction_id_seq'::regclass) NOT NULL,
 	"agency_id" Integer,
 	"direction_label" Character Varying( 35 ) COLLATE "pg_catalog"."default" NOT NULL,
@@ -24,20 +24,20 @@ CREATE TABLE "public"."migrate_agency" (
 	"last_modified" Timestamp Without Time Zone DEFAULT now() NOT NULL,
 	PRIMARY KEY ( "direction_id" ) );
  
- CREATE TABLE "public"."migrate_headsigns" ( 
+ CREATE TABLE "public"."migrate_play_headsigns" ( 
 	"agency_id" Integer,
 	"headsign_id" Integer DEFAULT nextval('headsigns_headsign_id_seq'::regclass) NOT NULL,
 	"headsign" Character Varying( 105 ) COLLATE "pg_catalog"."default" DEFAULT ''::character varying NOT NULL,
 	"last_modified" Timestamp Without Time Zone DEFAULT now() NOT NULL,
 	PRIMARY KEY ( "headsign_id" ) );
  
- CREATE TABLE "public"."migrate_pattern_stop" ( 
+ CREATE TABLE "public"."migrate_play_pattern_stop" ( 
 	"agency_id" SmallInt NOT NULL,
 	"pattern_id" Bigint NOT NULL,
 	"stop_order" SmallInt NOT NULL,
 	"stop_id" Bigint NOT NULL );
  
- CREATE TABLE "public"."migrate_patterns" ( 
+ CREATE TABLE "public"."migrate_play_pattern" ( 
 	"agency_id" SmallInt NOT NULL,
 	"pattern_id" Bigint NOT NULL,
 	"route_id" Bigint NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE "public"."migrate_agency" (
 	"headsign_id" Bigint,
 	PRIMARY KEY ( "pattern_id" ) );
  
- CREATE TABLE "public"."migrate_routes" ( 
+ CREATE TABLE "public"."migrate_play_routes" ( 
 	"agency_id" Integer DEFAULT 0,
 	"route_id" Integer DEFAULT nextval('routes_route_id_seq'::regclass) NOT NULL,
 	"route_short_name" Character Varying( 30 ) COLLATE "pg_catalog"."default" DEFAULT ''::character varying NOT NULL,
@@ -62,12 +62,12 @@ CREATE TABLE "public"."migrate_agency" (
 	"hidden" Boolean DEFAULT false NOT NULL,
 	PRIMARY KEY ( "route_id" ) );
  
- CREATE TABLE "public"."migrate_timed_pattern" ( 
+ CREATE TABLE "public"."migrate_play_timed_pattern" ( 
 	"agency_id" SmallInt NOT NULL,
 	"timed_pattern_id" Bigint NOT NULL,
 	"pattern_id" Bigint NOT NULL );
  
- CREATE TABLE "public"."migrate_timed_pattern_stop" ( 
+ CREATE TABLE "public"."migrate_play_timed_pattern_stop" ( 
 	"agency_id" SmallInt NOT NULL,
 	"stop_id" Bigint,
 	"stop_order" SmallInt NOT NULL,
@@ -79,7 +79,7 @@ CREATE TABLE "public"."migrate_agency" (
 	"departure_time" Interval,
 	"headsign_id" Bigint );
  
- CREATE TABLE "public"."migrate_timed_pattern_stops_nonnormalized" ( 
+ CREATE TABLE "public"."migrate_play_timed_pattern_stops_nonnormalized" ( 
 	"agency_id" SmallInt NOT NULL,
 	"agency_name" Character Varying( 2044 ) COLLATE "pg_catalog"."default" NOT NULL,
 	"route_short_name" Character Varying( 2044 ) COLLATE "pg_catalog"."default" NOT NULL,

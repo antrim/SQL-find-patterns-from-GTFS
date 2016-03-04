@@ -9,7 +9,7 @@ agency_id, headsign_id, headsign, last_modified );
  
  CREATE TABLE "migrate_pattern_stop" ( 
 agency_id, pattern_id, stop_order, stop_id,  
- CREATE TABLE "migrate_patterns" ( 
+ CREATE TABLE "migrate_pattern" ( 
 agency_id, pattern_id, route_id, direction_id, headsign_id );
  
  CREATE TABLE "migrate_routes" ( 
