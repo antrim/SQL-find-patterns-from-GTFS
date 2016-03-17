@@ -6,14 +6,14 @@ $live = false;
 set_time_limit(7200);
 
 $table_prefix = "play_migrate_";
-
 $agency_array = array (1,3,175,267,392);
+
 $agency_string = implode(",",$agency_array);
 
 // so apparently trillium_gtfs_web will never be able to run truncate on the table created by aaron_super with an autoincrement counter
 // http://dba.stackexchange.com/questions/58282/error-must-be-owner-of-relation-user-account-id-seq
 
-$truncate_migrate_tables_query = "TRUNCATE {$table_prefix}timed_pattern_stops_nonnormalized, {$table_prefix}agency, {$table_prefix}pattern_stop, {$table_prefix}timed_pattern_stop, {$table_prefix}timed_pattern, {$table_prefix}routes, {$table_prefix}pattern, {$table_prefix}headsigns,{$table_prefix}directions,{$table_prefix}schedule,{$table_prefix}calendar_annual,{$table_prefix}calendar_annual_bounds,{$table_prefix}calendar_weekly RESTART IDENTITY;";
+$truncate_migrate_tables_query = "TRUNCATE {$table_prefix}timed_pattern_stops_nonnormalized, {$table_prefix}agency, {$table_prefix}pattern_stop, {$table_prefix}timed_pattern_stop, {$table_prefix}timed_pattern, {$table_prefix}routes, {$table_prefix}pattern, {$table_prefix}headsigns,{$table_prefix}directions,{$table_prefix}schedule,{$table_prefix}calendar_annual,{$table_prefix}calendar_annual_bounds,{$table_prefix}calendar_weekly,{$table_prefix}stops,{$table_prefix}blocks RESTART IDENTITY;";
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
 
 $migrate_timed_pattern_stops_nonnormalized_query  = "insert into {$table_prefix}timed_pattern_stops_nonnormalized (agency_id, agency_name, route_short_name, route_long_name, direction_label, direction_id, trip_headsign_id, trip_headsign, stop_id, stop_order, timed_pattern_id, pattern_id, arrival_time, departure_time, pickup_type, drop_off_type, one_trip, trips_list, stops_pattern, arrival_time_intervals, departure_time_intervals, route_id, stop_headsign_id)
@@ -187,6 +187,17 @@ SELECT agency_id, service_schedule_group_id, start_date, end_date FROM service_s
 WHERE agency_id IN ($agency_string) AND service_schedule_group_id IS NULL;";
 $result = db_query($migrate_calendar_annual_bounds_query);
 
+// blocks
+$migrate_blocks_query  = "INSERT into {$table_prefix}blocks (agency_id, block_id, label)
+SELECT agency_id, block_id, block_label FROM blocks
+WHERE agency_id IN ($agency_string);";
+$result = db_query($migrate_blocks_query);
+
+// stops
+$migrate_stops_query  = "INSERT into {$table_prefix}stops (agency_id, stop_id, stop_code, location_type, parent_station, stop_desc, stop_comments, location, zone_id, platform_code, city, direction_id, url, publish_status, timezone, stop_id)
+SELECT agency_id, stop_id, stop_code, location_type, parent_station, stop_desc, stop_comments, geom, zone_id, platform_code, city, direction_id, stop_url, publish_status, stop_timezone, stop_id FROM stops
+WHERE agency_id IN ($agency_string);";
+$result = db_query($migrate_blocks_query);
 
 $patterns_nonnormalized_query = "select distinct timed_pattern_id,agency_id,trips_list from {$table_prefix}timed_pattern_stops_nonnormalized;";
 $patterns_nonnormalized_result   = db_query($patterns_nonnormalized_query);
