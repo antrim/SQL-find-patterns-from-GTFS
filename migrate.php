@@ -5,7 +5,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
 $live = false;
 set_time_limit(7200);
 
-$table_prefix = "play_migrate_";
+$table_prefix = "migrate_";
 $agency_array = array (1,3,175,267,392);
 
 $agency_string = implode(",",$agency_array);
@@ -171,7 +171,7 @@ $result = db_query($migrate_directions_query);
 
 // calendar
 
-$migrate_calendar_weekly_query  = "INSERT into play_migrate_calendar_weekly (agency_id, calendar_weekly_id, calendar_annual_id, label, monday, tuesday, wednesday, thursday, friday, saturday, sunday)
+$migrate_calendar_weekly_query  = "INSERT into {$table_prefix}calendar_weekly (agency_id, calendar_weekly_id, calendar_annual_id, label, monday, tuesday, wednesday, thursday, friday, saturday, sunday)
 SELECT agency_id,calendar.calendar_id as calendar_weekly_id, service_schedule_group_id as calendar_annual_id, calendar.service_label as label,monday::boolean,tuesday::boolean,wednesday::boolean,thursday::boolean,friday::boolean,saturday::boolean,sunday::boolean FROM calendar WHERE agency_id IN ($agency_string) AND calendar.calendar_id IS NOT NULL AND service_schedule_group_id IS NOT NULL;";
 $result = db_query($migrate_calendar_weekly_query);
 
@@ -190,7 +190,7 @@ $result = db_query($migrate_calendar_annual_bounds_query);
 // blocks
 $migrate_blocks_query  = "INSERT into {$table_prefix}blocks (agency_id, block_id, label)
 SELECT agency_id, block_id, block_label FROM blocks
-WHERE agency_id IN ($agency_string);";
+WHERE agency_id IN ($agency_string) AND block_id IS NOT NULL;";
 $result = db_query($migrate_blocks_query);
 
 // stops
