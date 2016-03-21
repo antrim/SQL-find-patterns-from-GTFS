@@ -5,7 +5,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
 $live = false;
 set_time_limit(7200);
 
-$table_prefix = "migrate_";
+$table_prefix = "play_migrate_";
 $agency_array = array (1,3,175,267,392);
 
 $agency_string = implode(",",$agency_array);
@@ -13,7 +13,7 @@ $agency_string = implode(",",$agency_array);
 // so apparently trillium_gtfs_web will never be able to run truncate on the table created by aaron_super with an autoincrement counter
 // http://dba.stackexchange.com/questions/58282/error-must-be-owner-of-relation-user-account-id-seq
 
-$truncate_migrate_tables_query = "TRUNCATE {$table_prefix}timed_pattern_stops_nonnormalized, {$table_prefix}agency, {$table_prefix}pattern_stop, {$table_prefix}timed_pattern_stop, {$table_prefix}timed_pattern, {$table_prefix}routes, {$table_prefix}pattern, {$table_prefix}headsigns,{$table_prefix}directions,{$table_prefix}schedule,{$table_prefix}calendar_annual,{$table_prefix}calendar_annual_bounds,{$table_prefix}calendar_weekly,{$table_prefix}stops,{$table_prefix}blocks RESTART IDENTITY;";
+$truncate_migrate_tables_query = "TRUNCATE {$table_prefix}timed_pattern_stops_nonnormalized, {$table_prefix}agency, {$table_prefix}pattern_stop, {$table_prefix}timed_pattern_stop, {$table_prefix}timed_pattern, {$table_prefix}routes, {$table_prefix}pattern, {$table_prefix}headsigns,{$table_prefix}directions,{$table_prefix}schedule,{$table_prefix}calendar,{$table_prefix}calendar_bounds,{$table_prefix}stops,{$table_prefix}blocks RESTART IDENTITY;";
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
 
 $migrate_timed_pattern_stops_nonnormalized_query  = "insert into {$table_prefix}timed_pattern_stops_nonnormalized (agency_id, agency_name, route_short_name, route_long_name, direction_label, direction_id, trip_headsign_id, trip_headsign, stop_id, stop_order, timed_pattern_id, pattern_id, arrival_time, departure_time, pickup_type, drop_off_type, one_trip, trips_list, stops_pattern, arrival_time_intervals, departure_time_intervals, route_id, stop_headsign_id)
@@ -170,22 +170,16 @@ ORDER BY direction_id, agency_id";
 $result = db_query($migrate_directions_query);
 
 // calendar
-
-$migrate_calendar_weekly_query  = "INSERT into {$table_prefix}calendar_weekly (agency_id, calendar_weekly_id, calendar_annual_id, label, monday, tuesday, wednesday, thursday, friday, saturday, sunday)
-SELECT agency_id,calendar.calendar_id as calendar_weekly_id, service_schedule_group_id as calendar_annual_id, calendar.service_label as label,monday::boolean,tuesday::boolean,wednesday::boolean,thursday::boolean,friday::boolean,saturday::boolean,sunday::boolean FROM calendar WHERE agency_id IN ($agency_string) AND calendar.calendar_id IS NOT NULL AND service_schedule_group_id IS NOT NULL;";
-$result = db_query($migrate_calendar_weekly_query);
-
-// calendar
-$migrate_calendar_annual_query  = "INSERT into {$table_prefix}calendar_annual (agency_id, calendar_annual_id, label)
-SELECT agency_id, service_schedule_group_id AS calendar_annual_id, service_schedule_group_label AS label FROM service_schedule_groups
+$migrate_calendar_query  = "INSERT into {$table_prefix}calendar (agency_id, calendar_id, label)
+SELECT agency_id, service_schedule_group_id AS calendar_id, service_schedule_group_label AS label FROM service_schedule_groups
 WHERE agency_id IN ($agency_string) AND service_schedule_group_id IS NOT NULL;";
-$result = db_query($migrate_calendar_annual_query);
+$result = db_query($migrate_calendar_query);
 
 // calendar
-$migrate_calendar_annual_bounds_query  = "INSERT into {$table_prefix}calendar_annual_bounds (agency_id, calendar_annual_id, start_date, end_date)
+$migrate_calendar_bounds_query  = "INSERT into {$table_prefix}calendar_bounds (agency_id, calendar_id, start_date, end_date)
 SELECT agency_id, service_schedule_group_id, start_date, end_date FROM service_schedule_bounds
 WHERE agency_id IN ($agency_string) AND service_schedule_group_id IS NULL;";
-$result = db_query($migrate_calendar_annual_bounds_query);
+$result = db_query($migrate_calendar_bounds_query);
 
 // blocks
 $migrate_blocks_query  = "INSERT into {$table_prefix}blocks (agency_id, block_id, label)
@@ -194,8 +188,8 @@ WHERE agency_id IN ($agency_string) AND block_id IS NOT NULL;";
 $result = db_query($migrate_blocks_query);
 
 // stops
-$migrate_stops_query  = "INSERT into {$table_prefix}stops (agency_id, stop_id, stop_code, location_type, parent_station, stop_desc, stop_comments, location, zone_id, platform_code, city, direction_id, url, publish_status, timezone, stop_id)
-SELECT agency_id, stop_id, stop_code, location_type, parent_station, stop_desc, stop_comments, geom, zone_id, platform_code, city, direction_id, stop_url, publish_status, stop_timezone, stop_id FROM stops
+$migrate_stops_query  = "INSERT into {$table_prefix}stops (agency_id, stop_id, stop_code, platform_code, location_type, parent_station, stop_desc, stop_comments, location, zone_id, platform_code, city, direction_id, url, publish_status, timezone, stop_id)
+SELECT agency_id, stop_id, stop_code, platform_code, location_type, parent_station, stop_desc, stop_comments, geom, zone_id, platform_code, city, direction_id, stop_url, publish_status, stop_timezone, stop_id FROM stops
 WHERE agency_id IN ($agency_string);";
 $result = db_query($migrate_blocks_query);
 
@@ -207,16 +201,14 @@ $timed_pattern_id = $row['timed_pattern_id'];
 $agency_id = $row['agency_id'];
 $trips_list = $row['trips_list'];
 
-// agency_id, timed_pattern_id, calendar_weekly_id, start_time, end_time, headway, block_id
-
-$schedule_insert_query = "INSERT into {$table_prefix}schedule (agency_id, timed_pattern_id, calendar_weekly_id, start_time, end_time, headway, block_id)
-SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_id AS calendar_weekly_id,MIN(arrival_time)::INTERVAL AS start_time,NULL::INTERVAL as end_time,  NULL::integer as headway, block_id FROM trips inner join stop_times on trips.trip_id = stop_times.trip_id WHERE trips.trip_id IN ({$trips_list}) AND NOT EXISTS (SELECT NULL from frequencies WHERE trips.trip_id = frequencies.trip_id) AND based_on IS NULL AND trips.service_id IS NOT NULL GROUP BY trips.agency_id, timed_pattern_id, service_id , end_time, headway, block_id
+$schedule_insert_query = "INSERT into {$table_prefix}schedule (agency_id, timed_pattern_id, calendar_id, start_time, end_time, headway, block_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday)
+SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_schedule_group_id AS calendar_id,MIN(arrival_time)::INTERVAL AS start_time,NULL::INTERVAL as end_time,  NULL::integer as headway, block_id, monday::boolean,tuesday::boolean,wednesday::boolean,thursday::boolean,friday::boolean,saturday::boolean,sunday::boolean FROM trips inner join stop_times on trips.trip_id = stop_times.trip_id INNER JOIN calendar ON trips.service_id = calendar.calendar_id WHERE trips.trip_id IN ({$trips_list}) AND NOT EXISTS (SELECT NULL from frequencies WHERE trips.trip_id = frequencies.trip_id) AND based_on IS NULL AND trips.service_id IS NOT NULL GROUP BY trips.agency_id, timed_pattern_id, calendar_id , end_time, headway, block_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday
 UNION
-SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_id AS calendar_weekly_id, trips.trip_start_time::INTERVAL AS start_time, NULL::INTERVAL as end_time, NULL::INTEGER as headway, block_id FROM trips WHERE trips.trip_id IN ({$trips_list}) AND trips.service_id IS NOT NULL AND NOT EXISTS (SELECT NULL from frequencies WHERE trips.trip_id = frequencies.trip_id) AND based_on IS NOT NULL
+SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_schedule_group_id AS calendar_id, trips.trip_start_time::INTERVAL AS start_time, NULL::INTERVAL as end_time, NULL::INTEGER as headway, block_id, monday::boolean,tuesday::boolean,wednesday::boolean,thursday::boolean,friday::boolean,saturday::boolean,sunday::boolean FROM trips INNER JOIN calendar ON trips.service_id = calendar.calendar_id WHERE trips.trip_id IN ({$trips_list}) AND trips.service_id IS NOT NULL AND NOT EXISTS (SELECT NULL from frequencies WHERE trips.trip_id = frequencies.trip_id) AND based_on IS NOT NULL
 UNION
-SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_id AS calendar_weekly_id, frequencies.start_time::INTERVAL AS start_time, frequencies.end_time::INTERVAL as end_time, frequencies.headway_secs AS headway, block_id FROM frequencies INNER JOIN trips ON frequencies.trip_id = trips.trip_id WHERE frequencies.trip_id IN ({$trips_list}) AND trips.service_id IS NOT NULL AND based_on IS NOT NULL
+SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_schedule_group_id AS calendar_id, frequencies.start_time::INTERVAL AS start_time, frequencies.end_time::INTERVAL as end_time, frequencies.headway_secs AS headway, block_id, monday::boolean,tuesday::boolean,wednesday::boolean,thursday::boolean,friday::boolean,saturday::boolean,sunday::boolean FROM frequencies INNER JOIN trips ON frequencies.trip_id = trips.trip_id INNER JOIN calendar ON trips.service_id = calendar.calendar_id WHERE frequencies.trip_id IN ({$trips_list}) AND trips.service_id IS NOT NULL AND based_on IS NOT NULL
 UNION
-SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_id AS calendar_weekly_id, frequencies.start_time::INTERVAL AS start_time, frequencies.end_time::INTERVAL as end_time, frequencies.headway_secs AS headway, block_id FROM frequencies INNER JOIN trips ON frequencies.trip_id = trips.trip_id WHERE frequencies.trip_id IN ({$trips_list}) AND trips.service_id IS NOT NULL AND based_on IS NULL;";
+SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_schedule_group_id AS calendar_id, frequencies.start_time::INTERVAL AS start_time, frequencies.end_time::INTERVAL as end_time, frequencies.headway_secs AS headway, block_id, monday::boolean,tuesday::boolean,wednesday::boolean,thursday::boolean,friday::boolean,saturday::boolean,sunday::boolean FROM frequencies INNER JOIN trips ON frequencies.trip_id = trips.trip_id INNER JOIN calendar ON trips.service_id = calendar.calendar_id WHERE frequencies.trip_id IN ({$trips_list}) AND trips.service_id IS NOT NULL AND based_on IS NULL;";
 
 
 // echo $schedule_insert_query."\n\n";

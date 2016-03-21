@@ -22,33 +22,19 @@ CREATE TABLE "public"."migrate_agency" (
 	"label" Character Varying( 2044 ) NOT NULL,
 	PRIMARY KEY ( "block_id" ) );
  
- CREATE TABLE "public"."migrate_calendar_annual" ( 
+CREATE TABLE "public"."migrate_calendar" ( 
 	"agency_id" Integer NOT NULL,
-	"calendar_annual_id" Integer NOT NULL,
+	"calendar_id" Serial NOT NULL,
 	"label" Character Varying( 2044 ) NOT NULL,
-	PRIMARY KEY ( "calendar_annual_id" ) );
+	PRIMARY KEY ( "calendar_id" ) );
  
- CREATE TABLE "public"."migrate_calendar_annual_bounds" ( 
+CREATE TABLE "public"."migrate_calendar_bounds" ( 
 	"agency_id" Integer NOT NULL,
-	"calendar_annual_bounds_id" Integer NOT NULL,
-	"calendar_annual_id" Integer NOT NULL,
+	"calendar_bounds_id" Serial NOT NULL,
+	"calendar_id" Integer NOT NULL,
 	"start_date" Date NOT NULL,
 	"end_date" Date NOT NULL,
-	PRIMARY KEY ( "calendar_annual_bounds_id" ) );
- 
- CREATE TABLE "public"."migrate_calendar_weekly" ( 
-	"agency_id" Integer NOT NULL,
-	"calendar_weekly_id" Integer NOT NULL,
-	"label" Character Varying( 2044 ),
-	"monday" Boolean NOT NULL,
-	"tuesday" Boolean NOT NULL,
-	"wednesday" Boolean NOT NULL,
-	"thursday" Boolean NOT NULL,
-	"friday" Boolean NOT NULL,
-	"saturday" Boolean NOT NULL,
-	"sunday" Boolean NOT NULL,
-	"calendar_annual_id" Integer NOT NULL,
-	PRIMARY KEY ( "calendar_weekly_id" ) );
+	PRIMARY KEY ( "calendar_bounds_id" ) );
  
  CREATE TABLE "public"."migrate_directions" ( 
 	"direction_id" Serial NOT NULL,
@@ -96,17 +82,24 @@ CREATE TABLE "public"."migrate_agency" (
 	"hidden" Boolean DEFAULT false NOT NULL,
 	PRIMARY KEY ( "route_id" ) );
  
- CREATE TABLE "public"."migrate_schedule" ( 
+CREATE TABLE "public"."migrate_schedule" ( 
 	"timed_pattern_id" Integer NOT NULL,
-	"calendar_weekly_id" Integer NOT NULL,
+	"calendar_id" Integer NOT NULL,
 	"headway" Integer,
 	"block_id" Integer,
-	"loop" Boolean,
 	"agency_id" Integer NOT NULL,
 	"start_time" Interval NOT NULL,
 	"end_time" Interval,
 	"schedule_id" Serial NOT NULL,
+	"monday" Boolean DEFAULT false NOT NULL,
+	"tuesday" Boolean DEFAULT false NOT NULL,
+	"wednesday" Boolean DEFAULT false NOT NULL,
+	"thursday" Boolean DEFAULT false NOT NULL,
+	"friday" Boolean DEFAULT false NOT NULL,
+	"saturday" Boolean DEFAULT false NOT NULL,
+	"sunday" Boolean DEFAULT false NOT NULL,
 	PRIMARY KEY ( "schedule_id" ) );
+ 
  
  CREATE TABLE "public"."migrate_stops" ( 
 	"agency_id" Integer NOT NULL,
@@ -171,9 +164,8 @@ CREATE TABLE "public"."migrate_agency" (
  
 ALTER TABLE "public"."migrate_agency" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_blocks" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_calendar_annual" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_calendar_annual_bounds" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_calendar_weekly" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_calendar" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_calendar_bounds" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_directions" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_headsigns" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_pattern" OWNER TO trillium_gtfs_web;
