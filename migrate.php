@@ -5,7 +5,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
 $live = false;
 set_time_limit(7200);
 
-$table_prefix = "play_migrate_";
+$table_prefix = "migrate_";
 $agency_array = array (1,3,175,267,392);
 
 $agency_string = implode(",",$agency_array);
@@ -177,8 +177,8 @@ $result = db_query($migrate_calendar_query);
 
 // calendar
 $migrate_calendar_bounds_query  = "INSERT into {$table_prefix}calendar_bounds (agency_id, calendar_id, start_date, end_date)
-SELECT agency_id, service_schedule_group_id, start_date, end_date FROM service_schedule_bounds
-WHERE agency_id IN ($agency_string) AND service_schedule_group_id IS NULL;";
+SELECT agency_id, service_schedule_group_id as calendar_id, start_date, end_date FROM service_schedule_bounds
+WHERE agency_id IN ($agency_string) AND service_schedule_group_id IS NOT NULL;";
 $result = db_query($migrate_calendar_bounds_query);
 
 // blocks
