@@ -103,6 +103,8 @@ inner join agency on stop_times.agency_id = agency.agency_id
 ORDER BY pattern_id,timed_pattern_id ASC, stop_times.stop_sequence ASC";
 $migrate_timed_pattern_stops_nonnormalized_result = db_query($migrate_timed_pattern_stops_nonnormalized_query);
 
+ECHO $migrate_timed_pattern_stops_nonnormalized_query;
+
 $migrate_agency_query  = "insert into {$table_prefix}agency (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, last_modified, maintenance_start, gtfs_plus, no_frequencies) select agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, last_modified, maintenance_start, gtfs_plus, no_frequencies from agency where agency_id IN ($agency_string)";
 $migrate_agency_result = db_query($migrate_agency_query);
 
@@ -183,7 +185,7 @@ $result = db_query($migrate_calendar_bounds_query);
 
 // blocks
 $migrate_blocks_query  = "INSERT into {$table_prefix}blocks (agency_id, block_id, label)
-SELECT agency_id, block_id, block_label FROM blocks
+SELECT DISTINCT agency_id, block_id, block_label FROM blocks
 WHERE agency_id IN ($agency_string) AND block_id IS NOT NULL;";
 $result = db_query($migrate_blocks_query);
 
