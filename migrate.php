@@ -221,6 +221,12 @@ $schedule_result = db_query($schedule_insert_query);
 
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
 // 1. Gather distinct actual travel segments from schedules -- not sure of the best way to do this. Basically "From stop_id to (next) stop_id" denotes a travel segment -- which might occur in a whole number of trips and even routes.
+
+// I'm pretty sure the below SQL will be useful and efficient for step 1.
+// SELECT DISTINCT stop_id as stop_id_start, thenextstop as stop_id_end, agency_id
+// FROM (SELECT agency_id, stop_id, lag(stop_id) over (PARTITION BY trip_id order by stop_sequence) AS thenextstop FROM stop_times WHERE agency_id = 1) s
+// WHERE thenextstop IS NOT NULL order by stop_id_start
+ 
 // 2. Then select the latest alignment for that segment (if it exists). In cases where one alignment matches the start and end stop ID, I believe that with the largest segment ID is the last stored, and is the one currently in use.
 // 3. Discard vertices that are within 7 feet of a previous.
 // 4. Transfer to the migrate tables.
