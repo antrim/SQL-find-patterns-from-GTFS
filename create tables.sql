@@ -1,5 +1,6 @@
 CREATE TABLE "public"."migrate_agency" ( 
 	"agency_id" Serial NOT NULL,
+	"feed_id" SmallInt,
 	"agency_id_import" Character Varying( 100 ) DEFAULT NULL::character varying,
 	"agency_url" Character Varying( 255 ) DEFAULT ''::character varying NOT NULL,
 	"agency_timezone" Character Varying( 45 ) DEFAULT ''::character varying NOT NULL,
@@ -161,6 +162,15 @@ CREATE TABLE "public"."migrate_schedule" (
 	"departure_time" Interval,
 	"stop_headsign" Character Varying( 2044 ),
 	"stop_headsign_id" Bigint );
+	
+CREATE TABLE "public"."migrate_feeds" (
+    feed_name character varying(2044) NOT NULL,
+    contact_email character varying(2044) ,
+    contact_url character varying(2044),
+    license character varying(2044) ,
+    id SERIAL NOT NULL,
+    last_modified Timestamp Without Time Zone; 
+);
  
 ALTER TABLE "public"."migrate_agency" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_blocks" OWNER TO trillium_gtfs_web;
@@ -176,3 +186,4 @@ ALTER TABLE "public"."migrate_stops" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_timed_pattern" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_timed_pattern_stop" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_timed_pattern_stops_nonnormalized" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_feed" OWNER TO trillium_gtfs_web;

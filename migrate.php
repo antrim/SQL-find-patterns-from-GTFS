@@ -5,7 +5,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
 $live = false;
 set_time_limit(7200);
 
-$table_prefix = "migrate_";
+$table_prefix = "play_migrate_";
 $agency_array = array (1,3,175,267,392);
 
 $agency_string = implode(",",$agency_array);
@@ -13,7 +13,7 @@ $agency_string = implode(",",$agency_array);
 // so apparently trillium_gtfs_web will never be able to run truncate on the table created by aaron_super with an autoincrement counter
 // http://dba.stackexchange.com/questions/58282/error-must-be-owner-of-relation-user-account-id-seq
 
-$truncate_migrate_tables_query = "TRUNCATE {$table_prefix}timed_pattern_stops_nonnormalized, {$table_prefix}agency, {$table_prefix}pattern_stop, {$table_prefix}timed_pattern_stop, {$table_prefix}timed_pattern, {$table_prefix}routes, {$table_prefix}pattern, {$table_prefix}headsigns,{$table_prefix}directions,{$table_prefix}schedule,{$table_prefix}calendar,{$table_prefix}calendar_bounds,{$table_prefix}stops,{$table_prefix}blocks RESTART IDENTITY;";
+$truncate_migrate_tables_query = "TRUNCATE {$table_prefix}timed_pattern_stops_nonnormalized, {$table_prefix}agency, {$table_prefix}pattern_stop, {$table_prefix}timed_pattern_stop, {$table_prefix}timed_pattern, {$table_prefix}routes, {$table_prefix}pattern, {$table_prefix}headsigns,{$table_prefix}directions,{$table_prefix}schedule,{$table_prefix}calendar,{$table_prefix}calendar_bounds,{$table_prefix}stops,{$table_prefix}blocks,{$table_prefix}feed RESTART IDENTITY;";
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
 
 $migrate_timed_pattern_stops_nonnormalized_query  = "insert into {$table_prefix}timed_pattern_stops_nonnormalized (agency_id, agency_name, route_short_name, route_long_name, direction_label, direction_id, trip_headsign_id, trip_headsign, stop_id, stop_order, timed_pattern_id, pattern_id, arrival_time, departure_time, pickup_type, drop_off_type, one_trip, trips_list, stops_pattern, arrival_time_intervals, departure_time_intervals, route_id, stop_headsign_id)
@@ -105,8 +105,12 @@ $migrate_timed_pattern_stops_nonnormalized_result = db_query($migrate_timed_patt
 
 ECHO $migrate_timed_pattern_stops_nonnormalized_query;
 
-$migrate_agency_query  = "insert into {$table_prefix}agency (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, last_modified, maintenance_start, gtfs_plus, no_frequencies) select agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, last_modified, maintenance_start, gtfs_plus, no_frequencies from agency where agency_id IN ($agency_string)";
+$migrate_agency_query  = "insert into {$table_prefix}agency (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, last_modified, maintenance_start, gtfs_plus, no_frequencies, feed_id) select distinct agency.agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, agency.last_modified, maintenance_start, gtfs_plus, no_frequencies, agency_group_id as feed_id from agency inner join agency_group_assoc on agency.agency_id = agency_group_assoc.agency_id where agency.agency_id IN ($agency_string)";
 $migrate_agency_result = db_query($migrate_agency_query);
+
+$migrate_feeds_query  = "insert into {$table_prefix}feed (id, feed_name, contact_email, contact_url, license, last_modified) select distinct agency_groups.agency_group_id, group_name, feed_contact_email, feed_contact_url, feed_license, agency_groups.last_modified from agency_groups inner join agency_group_assoc on agency_group_assoc.agency_group_id = agency_groups.agency_group_id where agency_group_assoc.agency_id IN ($agency_string)";
+$migrate_feeds_result = db_query($migrate_feeds_query);
+echo "\n\n".$migrate_feeds_query."\n\n";
 
 // pattern_stop.sql
 $migrate_pattern_stop_query  = "INSERT into {$table_prefix}pattern_stop
