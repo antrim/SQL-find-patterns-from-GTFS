@@ -5,7 +5,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
 $live = false;
 set_time_limit(7200);
 
-$table_prefix = "play_migrate_";
+$table_prefix = "play_migrate";
 $agency_array = array (1,3,175,267,392);
 
 $agency_string = implode(",",$agency_array);
@@ -13,10 +13,10 @@ $agency_string = implode(",",$agency_array);
 // so apparently trillium_gtfs_web will never be able to run truncate on the table created by aaron_super with an autoincrement counter
 // http://dba.stackexchange.com/questions/58282/error-must-be-owner-of-relation-user-account-id-seq
 
-$truncate_migrate_tables_query = "TRUNCATE {$table_prefix}timed_pattern_stops_nonnormalized, {$table_prefix}agency, {$table_prefix}pattern_stop, {$table_prefix}timed_pattern_stop, {$table_prefix}timed_pattern, {$table_prefix}routes, {$table_prefix}pattern, {$table_prefix}headsigns,{$table_prefix}directions,{$table_prefix}schedule,{$table_prefix}calendar,{$table_prefix}calendar_bounds,{$table_prefix}stops,{$table_prefix}blocks,{$table_prefix}feed RESTART IDENTITY;";
+$truncate_migrate_tables_query = "TRUNCATE {$table_prefix}_timed_pattern_stops_nonnormalized, {$table_prefix}_agency, {$table_prefix}_pattern_stop, {$table_prefix}_timed_pattern_stop, {$table_prefix}_timed_pattern, {$table_prefix}_routes, {$table_prefix}_pattern, {$table_prefix}_headsigns,{$table_prefix}_directions,{$table_prefix}_schedule,{$table_prefix}_calendar,{$table_prefix}_calendar_bounds,{$table_prefix}_stops,{$table_prefix}_blocks,{$table_prefix}_feed RESTART IDENTITY;";
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
 
-$migrate_timed_pattern_stops_nonnormalized_query  = "insert into {$table_prefix}timed_pattern_stops_nonnormalized (agency_id, agency_name, route_short_name, route_long_name, direction_label, direction_id, trip_headsign_id, trip_headsign, stop_id, stop_order, timed_pattern_id, pattern_id, arrival_time, departure_time, pickup_type, drop_off_type, one_trip, trips_list, stops_pattern, arrival_time_intervals, departure_time_intervals, route_id, stop_headsign_id)
+$migrate_timed_pattern_stops_nonnormalized_query  = "insert into {$table_prefix}_timed_pattern_stops_nonnormalized (agency_id, agency_name, route_short_name, route_long_name, direction_label, direction_id, trip_headsign_id, trip_headsign, stop_id, stop_order, timed_pattern_id, pattern_id, arrival_time, departure_time, pickup_type, drop_off_type, one_trip, trips_list, stops_pattern, arrival_time_intervals, departure_time_intervals, route_id, stop_headsign_id)
 
 WITH timed_patterns AS (
 
@@ -105,44 +105,44 @@ $migrate_timed_pattern_stops_nonnormalized_result = db_query($migrate_timed_patt
 
 ECHO $migrate_timed_pattern_stops_nonnormalized_query;
 
-$migrate_agency_query  = "insert into {$table_prefix}agency (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, last_modified, maintenance_start, gtfs_plus, no_frequencies, feed_id) select distinct agency.agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, agency.last_modified, maintenance_start, gtfs_plus, no_frequencies, agency_group_id as feed_id from agency inner join agency_group_assoc on agency.agency_id = agency_group_assoc.agency_id where agency.agency_id IN ($agency_string)";
+$migrate_agency_query  = "insert into {$table_prefix}_agency (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, last_modified, maintenance_start, gtfs_plus, no_frequencies, feed_id) select distinct agency.agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id, agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info, query_tracking, agency.last_modified, maintenance_start, gtfs_plus, no_frequencies, agency_group_id as feed_id from agency inner join agency_group_assoc on agency.agency_id = agency_group_assoc.agency_id where agency.agency_id IN ($agency_string)";
 $migrate_agency_result = db_query($migrate_agency_query);
 
-$migrate_feeds_query  = "insert into {$table_prefix}feed (id, feed_name, contact_email, contact_url, license, last_modified) select distinct agency_groups.agency_group_id, group_name, feed_contact_email, feed_contact_url, feed_license, agency_groups.last_modified from agency_groups inner join agency_group_assoc on agency_group_assoc.agency_group_id = agency_groups.agency_group_id where agency_group_assoc.agency_id IN ($agency_string)";
+$migrate_feeds_query  = "insert into {$table_prefix}_feed (id, feed_name, contact_email, contact_url, license, last_modified) select distinct agency_groups.agency_group_id, group_name, feed_contact_email, feed_contact_url, feed_license, agency_groups.last_modified from agency_groups inner join agency_group_assoc on agency_group_assoc.agency_group_id = agency_groups.agency_group_id where agency_group_assoc.agency_id IN ($agency_string)";
 $migrate_feeds_result = db_query($migrate_feeds_query);
 echo "\n\n".$migrate_feeds_query."\n\n";
 
 // pattern_stop.sql
-$migrate_pattern_stop_query  = "INSERT into {$table_prefix}pattern_stop
+$migrate_pattern_stop_query  = "INSERT into {$table_prefix}_pattern_stop
 SELECT DISTINCT  agency_id, pattern_id, stop_order, stop_id 
-FROM {$table_prefix}timed_pattern_stops_nonnormalized
+FROM {$table_prefix}_timed_pattern_stops_nonnormalized
 ORDER BY agency_id, pattern_id, stop_order";
 $result = db_query($migrate_pattern_stop_query);
 
 // timed_pattern_intervals.sql
-$migrate_timed_pattern_stop_query  = "INSERT into {$table_prefix}timed_pattern_stop (agency_id, timed_pattern_id, stop_order, arrival_time, departure_time, pickup_type, drop_off_type, headsign_id)
+$migrate_timed_pattern_stop_query  = "INSERT into {$table_prefix}_timed_pattern_stop (agency_id, timed_pattern_id, stop_order, arrival_time, departure_time, pickup_type, drop_off_type, headsign_id)
 SELECT DISTINCT agency_id, timed_pattern_id, stop_order, arrival_time, departure_time, pickup_type, drop_off_type, stop_headsign_id
-FROM {$table_prefix}timed_pattern_stops_nonnormalized
+FROM {$table_prefix}_timed_pattern_stops_nonnormalized
 ORDER BY agency_id, timed_pattern_id, stop_order";
 $result = db_query($migrate_timed_pattern_stop_query);
 
 // timed_pattern.sql
-$migrate_timed_pattern_query  = "INSERT into {$table_prefix}timed_pattern (agency_id, timed_pattern_id, pattern_id)
+$migrate_timed_pattern_query  = "INSERT into {$table_prefix}_timed_pattern (agency_id, timed_pattern_id, pattern_id)
 SELECT DISTINCT agency_id, timed_pattern_id, pattern_id
-FROM {$table_prefix}timed_pattern_stops_nonnormalized
+FROM {$table_prefix}_timed_pattern_stops_nonnormalized
 ORDER BY agency_id, pattern_id, timed_pattern_id";
 $result = db_query($migrate_timed_pattern_query);
 
 // routes.sql
-$migrate_routes_stop_query  = "insert into {$table_prefix}routes (agency_id, route_id, route_short_name, route_long_name, route_desc, route_type, route_color, route_text_color, route_url, route_bikes_allowed, route_id_import, last_modified, route_sort_order, hidden) select agency_id, route_id, route_short_name, route_long_name, route_desc, route_type, route_color, route_text_color, route_url, route_bikes_allowed, route_id_import, last_modified, route_sort_order, hidden from routes where agency_id IN ($agency_string)";
+$migrate_routes_stop_query  = "insert into {$table_prefix}_routes (agency_id, route_id, route_short_name, route_long_name, route_desc, route_type, route_color, route_text_color, route_url, route_bikes_allowed, route_id_import, last_modified, route_sort_order, hidden) select agency_id, route_id, route_short_name, route_long_name, route_desc, route_type, route_color, route_text_color, route_url, route_bikes_allowed, route_id_import, last_modified, route_sort_order, hidden from routes where agency_id IN ($agency_string)";
 $result = db_query($migrate_routes_stop_query);
 
 // patterns.sql
 // some patterns may be used by multiple routes/directions!!!!
 // one way to test this is: SELECT DISTINCT ON (pattern_id) agency_id, pattern_id, route_id, direction_id
-$migrate_pattern_query  = "INSERT into {$table_prefix}pattern (agency_id, pattern_id, route_id, direction_id)
+$migrate_pattern_query  = "INSERT into {$table_prefix}_pattern (agency_id, pattern_id, route_id, direction_id)
 SELECT DISTINCT agency_id, pattern_id, route_id, direction_id
-FROM {$table_prefix}timed_pattern_stops_nonnormalized
+FROM {$table_prefix}_timed_pattern_stops_nonnormalized
 ORDER BY  pattern_id, agency_id, route_id, direction_id";
 $result = db_query($migrate_pattern_query);
 
@@ -150,56 +150,56 @@ $result = db_query($migrate_pattern_query);
 // ALERT! Some patterns are on multiple routes. I need to figure out how to handle this. <-- come back here and play -- test results
 
 // SELECT count(distinct agency_id), pattern_id, count(distinct route_id) as route_count, count(distinct direction_id) as direction_count
-// FROM {$table_prefix}timed_pattern_stops_nonnormalized
+// FROM {$table_prefix}_timed_pattern_stops_nonnormalized
 // group by pattern_id
 // ORDER BY route_count DESC, direction_count DESC
 
 // headsigns.sql
 // ALERT! There are some null headsigns to look into here.
 
-$migrate_headsigns_query  = "INSERT into {$table_prefix}headsigns (agency_id, headsign_id, headsign)
+$migrate_headsigns_query  = "INSERT into {$table_prefix}_headsigns (agency_id, headsign_id, headsign)
 SELECT DISTINCT  agency_id, trip_headsign_id as headsign_id, trip_headsign AS headsign
-FROM {$table_prefix}timed_pattern_stops_nonnormalized where trip_headsign_id IS NOT NULL AND trip_headsign IS NOT NULL
+FROM {$table_prefix}_timed_pattern_stops_nonnormalized where trip_headsign_id IS NOT NULL AND trip_headsign IS NOT NULL
 UNION
 SELECT DISTINCT  agency_id, stop_headsign_id as headsign_id, stop_headsign AS headsign
-FROM {$table_prefix}timed_pattern_stops_nonnormalized where stop_headsign_id IS NOT NULL AND stop_headsign IS NOT NULL
+FROM {$table_prefix}_timed_pattern_stops_nonnormalized where stop_headsign_id IS NOT NULL AND stop_headsign IS NOT NULL
 ORDER BY agency_id, headsign_id";
 $result = db_query($migrate_headsigns_query);
 
 // directions.sql
 // ALERT!! There are some duplicate direction_id values to look ingo
 
-$migrate_directions_query  = "INSERT into {$table_prefix}directions (agency_id, direction_id, direction_label)
+$migrate_directions_query  = "INSERT into {$table_prefix}_directions (agency_id, direction_id, direction_label)
 SELECT DISTINCT on (direction_id)  agency_id, direction_id, direction_label
-FROM {$table_prefix}timed_pattern_stops_nonnormalized
+FROM {$table_prefix}_timed_pattern_stops_nonnormalized
 ORDER BY direction_id, agency_id";
 $result = db_query($migrate_directions_query);
 
 // calendar
-$migrate_calendar_query  = "INSERT into {$table_prefix}calendar (agency_id, calendar_id, label)
+$migrate_calendar_query  = "INSERT into {$table_prefix}_calendar (agency_id, calendar_id, label)
 SELECT agency_id, service_schedule_group_id AS calendar_id, service_schedule_group_label AS label FROM service_schedule_groups
 WHERE agency_id IN ($agency_string) AND service_schedule_group_id IS NOT NULL;";
 $result = db_query($migrate_calendar_query);
 
 // calendar
-$migrate_calendar_bounds_query  = "INSERT into {$table_prefix}calendar_bounds (agency_id, calendar_id, start_date, end_date)
+$migrate_calendar_bounds_query  = "INSERT into {$table_prefix}_calendar_bounds (agency_id, calendar_id, start_date, end_date)
 SELECT agency_id, service_schedule_group_id as calendar_id, start_date, end_date FROM service_schedule_bounds
 WHERE agency_id IN ($agency_string) AND service_schedule_group_id IS NOT NULL;";
 $result = db_query($migrate_calendar_bounds_query);
 
 // blocks
-$migrate_blocks_query  = "INSERT into {$table_prefix}blocks (agency_id, block_id, label)
+$migrate_blocks_query  = "INSERT into {$table_prefix}_blocks (agency_id, block_id, label)
 SELECT DISTINCT agency_id, block_id, block_label FROM blocks
 WHERE agency_id IN ($agency_string) AND block_id IS NOT NULL;";
 $result = db_query($migrate_blocks_query);
 
 // stops
-$migrate_stops_query  = "INSERT into {$table_prefix}stops (agency_id, stop_id, stop_code, platform_code, location_type, parent_station, stop_desc, stop_comments, location, zone_id, platform_code, city, direction_id, url, publish_status, timezone, stop_id)
+$migrate_stops_query  = "INSERT into {$table_prefix}_stops (agency_id, stop_id, stop_code, platform_code, location_type, parent_station, stop_desc, stop_comments, location, zone_id, platform_code, city, direction_id, url, publish_status, timezone, stop_id)
 SELECT agency_id, stop_id, stop_code, platform_code, location_type, parent_station, stop_desc, stop_comments, geom, zone_id, platform_code, city, direction_id, stop_url, publish_status, stop_timezone, stop_id FROM stops
 WHERE agency_id IN ($agency_string);";
 $result = db_query($migrate_blocks_query);
 
-$patterns_nonnormalized_query = "select distinct timed_pattern_id,agency_id,trips_list from {$table_prefix}timed_pattern_stops_nonnormalized;";
+$patterns_nonnormalized_query = "select distinct timed_pattern_id,agency_id,trips_list from {$table_prefix}_timed_pattern_stops_nonnormalized;";
 $patterns_nonnormalized_result   = db_query($patterns_nonnormalized_query);
   
 while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
@@ -207,7 +207,7 @@ $timed_pattern_id = $row['timed_pattern_id'];
 $agency_id = $row['agency_id'];
 $trips_list = $row['trips_list'];
 
-$schedule_insert_query = "INSERT into {$table_prefix}schedule (agency_id, timed_pattern_id, calendar_id, start_time, end_time, headway, block_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday)
+$schedule_insert_query = "INSERT into {$table_prefix}_schedule (agency_id, timed_pattern_id, calendar_id, start_time, end_time, headway, block_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday)
 SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_schedule_group_id AS calendar_id,MIN(arrival_time)::INTERVAL AS start_time,NULL::INTERVAL as end_time,  NULL::integer as headway, block_id, monday::boolean,tuesday::boolean,wednesday::boolean,thursday::boolean,friday::boolean,saturday::boolean,sunday::boolean FROM trips inner join stop_times on trips.trip_id = stop_times.trip_id INNER JOIN calendar ON trips.service_id = calendar.calendar_id WHERE trips.trip_id IN ({$trips_list}) AND NOT EXISTS (SELECT NULL from frequencies WHERE trips.trip_id = frequencies.trip_id) AND based_on IS NULL AND trips.service_id IS NOT NULL GROUP BY trips.agency_id, timed_pattern_id, calendar_id , end_time, headway, block_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday
 UNION
 SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id, service_schedule_group_id AS calendar_id, trips.trip_start_time::INTERVAL AS start_time, NULL::INTERVAL as end_time, NULL::INTEGER as headway, block_id, monday::boolean,tuesday::boolean,wednesday::boolean,thursday::boolean,friday::boolean,saturday::boolean,sunday::boolean FROM trips INNER JOIN calendar ON trips.service_id = calendar.calendar_id WHERE trips.trip_id IN ({$trips_list}) AND trips.service_id IS NOT NULL AND NOT EXISTS (SELECT NULL from frequencies WHERE trips.trip_id = frequencies.trip_id) AND based_on IS NOT NULL
