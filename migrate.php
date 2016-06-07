@@ -9,7 +9,7 @@ set_time_limit(7200);
 $table_prefix = "play_migrate";
 $agency_array = array (1, 3, 175, 267, 392);
 
-$agency_string = implode(",",$agency_array);
+$agency_string = implode(",", $agency_array);
 
 // So apparently trillium_gtfs_web will never be able to run truncate on the 
 // table created by aaron_super with an autoincrement counter
@@ -29,8 +29,6 @@ $truncate_migrate_tables_query = "TRUNCATE
     {$table_prefix}_blocks, {$table_prefix}_feed RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
-
-exit(0); // ED: exit early so we can examine the "truncated" tables.
 
 $migrate_timed_pattern_stops_nonnormalized_query  = "
 INSERT INTO {$table_prefix}_timed_pattern_stops_nonnormalized 
@@ -308,7 +306,7 @@ $migrate_stops_query  = "
          , city, direction_id, stop_url, publish_status, stop_timezone, stop_id  
     FROM stops
     WHERE agency_id IN ($agency_string);";
-$result = db_query($migrate_blocks_query);
+$result = db_query($migrate_stops_query);
 
 $patterns_nonnormalized_query = "
     SELECT DISTINCT timed_pattern_id, agency_id, trips_list 
