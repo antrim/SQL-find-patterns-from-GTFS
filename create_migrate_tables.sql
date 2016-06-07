@@ -110,7 +110,7 @@ CREATE TABLE "public"."migrate_schedule" (
 	"parent_station" Integer,  -- NOT NULL,
 	"stop_desc" Character Varying( 2044 ), -- NOT NULL,
 	"stop_comments" Character Varying( 2044 ) NOT NULL,
-	"location" "public"."geometry",
+	"location" "public"."GEOGRAPHY",
 	"zone_id" Integer, --  NOT NULL,
 	"platform_code" Character Varying( 2044 ), -- NOT NULL,
 	"city" Character Varying( 2044 ), --  NOT NULL,
