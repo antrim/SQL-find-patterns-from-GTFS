@@ -404,9 +404,9 @@ $migrate_shape_segments_query  = "
             max(shape_segments.shape_segment_id) AS shape_segment_id
            FROM shape_segments
           GROUP BY shape_segments.start_coordinate_id, shape_segments.end_coordinate_id )
-    SELECT start_coordinate_id, stop_coordinate_id, shape_segment_desc
-         , distance, last_modified
-    FROM shape_segments
+    SELECT ss.start_coordinate_id, ss.stop_coordinate_id, ss.shape_segment_desc
+         , ss.distance, ss.last_modified
+    FROM shape_segments ss
     JOIN most_recent USING (shape_segment_id)";
 $result = db_query($migrate_shape_segments_query);
 
