@@ -36,23 +36,22 @@ INSERT INTO {$table_prefix}_timed_pattern_stops_nonnormalized
      one_trip, trips_list, stops_pattern, arrival_time_intervals, 
      departure_time_intervals, route_id, stop_headsign_id)
 
-WITH timed_patterns AS (
 
-WITH timed_patterns_sub AS (
 
-WITH pattern_time_intervals AS(
+WITH pattern_time_intervals AS (
     SELECT MIN(trips.trip_id) as one_trip
          , string_agg( trips.trip_id::text, ', ' ORDER BY sequences.min_arrival_time ) AS trips_list
          , sequences.stops_pattern, arrival_time_intervals, departure_time_intervals
          , trips.agency_id, trips.route_id, trips.direction_id
     FROM trips
     INNER JOIN (
-        SELECT string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern
+        SELECT string_agg(stop_times.stop_id::text, ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern
              , stop_times.trip_id
              , MIN( stop_times.arrival_time ) AS min_arrival_time
-         INNER JOIN trips ON stop_times.trip_id = trips.trip_id
-         WHERE stop_times.agency_id IN ($agency_string) AND trips.based_on IS NULL
-         GROUP BY stop_times.trip_id) AS sequences 
+        INNER JOIN trips ON stop_times.trip_id = trips.trip_id
+        WHERE stop_times.agency_id IN ($agency_string) 
+              AND trips.based_on IS NULL
+        GROUP BY stop_times.trip_id) AS sequences 
       ON trips.trip_id = sequences.trip_id
 
     INNER JOIN
@@ -70,7 +69,9 @@ WITH pattern_time_intervals AS(
          FROM stop_times
          INNER JOIN trips ON stop_times.trip_id = trips.trip_id
          INNER JOIN (
-                 SELECT MIN( arrival_time ) AS min_arrival_time, MIN( departure_time ) AS min_departure_time,  stop_times.trip_id
+                 SELECT MIN( arrival_time ) AS min_arrival_time
+                      , MIN( departure_time ) AS min_departure_time
+                      , stop_times.trip_id
                  FROM stop_times
                  INNER JOIN trips on stop_times.trip_id = trips.trip_id
                  WHERE stop_times.agency_id IN ($agency_string) 
@@ -81,31 +82,39 @@ WITH pattern_time_intervals AS(
          GROUP BY min_trip_times.trip_id,min_arrival_time,min_departure_time
         ) AS time_intervals_result
 
-ON sequences.trip_id = time_intervals_result.trip_id
+       ON sequences.trip_id = time_intervals_result.trip_id
+     WHERE trips.agency_id IN ($agency_string) AND trips.based_on IS NULL
+     GROUP BY stops_pattern, arrival_time_intervals, departure_time_intervals
+            , trips.agency_id, trips.route_id, trips.direction_id
+   )
+        
+, timed_patterns_sub AS (
 
+    SELECT pattern_time_intervals.*, MIN( stop_times.arrival_time ) AS min_arrival_time
+         , MIN( stop_times.departure_time) AS min_departure_time
+    FROM pattern_time_intervals
+    INNER JOIN  stop_times 
+           ON pattern_time_intervals.one_trip = stop_times.trip_id 
+    WHERE stop_times.agency_id IN ($agency_string)
+    GROUP BY  one_trip, trips_list, stops_pattern, arrival_time_intervals
+            , departure_time_intervals, pattern_time_intervals.agency_id, route_id, direction_id
 
-WHERE trips.agency_id IN ($agency_string) AND trips.based_on IS NULL
-GROUP BY stops_pattern,arrival_time_intervals,departure_time_intervals,trips.agency_id,trips.route_id,trips.direction_id
 )
-SELECT pattern_time_intervals.* , MIN( stop_times.arrival_time ) AS min_arrival_time, MIN( stop_times.departure_time) AS min_departure_time
-FROM pattern_time_intervals
-inner join  stop_times on pattern_time_intervals.one_trip = stop_times.trip_id 
-WHERE stop_times.agency_id IN ($agency_string)
-group by  one_trip,trips_list,stops_pattern, arrival_time_intervals,departure_time_intervals,pattern_time_intervals.agency_id,route_id,direction_id
 
-) select row_number() over() as timed_pattern_id, * from timed_patterns_sub ),
+, timed_patterns AS (
+    SELECT row_number() over() AS timed_pattern_id, * 
+    FROM timed_patterns_sub)
 
-stop_patterns AS (
+, stop_patterns AS (
 
-WITH unique_patterns AS(
-SELECT DISTINCT string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern,trips.route_id,trips.direction_id
+    WITH unique_patterns AS(
+    SELECT DISTINCT string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern,trips.route_id,trips.direction_id
 
          FROM stop_times
          inner join trips on stop_times.trip_id = trips.trip_id
          WHERE trips.agency_id IN ($agency_string) AND trips.based_on IS NULL
          GROUP BY stop_times.trip_id,trips.route_id,trips.direction_id)
-SELECT unique_patterns.stops_pattern,route_id,direction_id,row_number() over() as pattern_id from unique_patterns
-
+    SELECT unique_patterns.stops_pattern,route_id,direction_id,row_number() over() as pattern_id from unique_patterns
 )
 
 SELECT timed_patterns.agency_id, agency.agency_name, routes.route_short_name
