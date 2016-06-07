@@ -244,3 +244,15 @@ ALTER TABLE "public"."migrate_timed_pattern" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_timed_pattern_stop" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_timed_pattern_stops_nonnormalized" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_feed" OWNER TO trillium_gtfs_web;
+
+ALTER TABLE "public"."migrate_shape_segments" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_shape_points" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."play_migrate_shape_segments" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."play_migrate_shape_points" OWNER TO trillium_gtfs_web;
+
+alter sequence "public".migrate_shape_segments_shape_segment_id_seq owner to trillium_gtfs_web;
+alter sequence "public".play_migrate_shape_segments_shape_segment_id_seq owner to trillium_gtfs_web;
+alter sequence "public".migrate_shape_points_shape_point_id_seq owner to trillium_gtfs_web;
+alter sequence "public".play_migrate_shape_points_shape_point_id_seq owner to trillium_gtfs_web;
+
+
