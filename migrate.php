@@ -438,7 +438,7 @@ $migrate_shape_points_query  = "
        , shape_dist_traveled, geog)
     SELECT agency_id, shape_point_id, sp.shape_segment_id 
          , shape_pt_lat, shape_pt_lon, shape_pt_sequence
-         , shape_dist_traveled, (geom :: GEOGRAPHY) as geog)
+         , shape_dist_traveled, (geom :: GEOGRAPHY) as geog
     FROM shape_points sp
     INNER JOIN {$table_prefix}_shape_segments USING (shape_segment_id)
 ";
