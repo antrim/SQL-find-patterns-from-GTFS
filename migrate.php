@@ -409,7 +409,7 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
 $migrate_shape_segments_query  = "
     INSERT into {$table_prefix}_shape_segments 
         (shape_segment_id
-       , from_stop_id, to_stop_id, shape_segment_desc
+       , from_stop_id, to_stop_id
        , distance, last_modified )
     WITH most_recent AS (
          SELECT shape_segments.start_coordinate_id,
@@ -418,7 +418,7 @@ $migrate_shape_segments_query  = "
            FROM shape_segments
           GROUP BY shape_segments.start_coordinate_id, shape_segments.end_coordinate_id )
     SELECT ss.shape_segment_id
-         , ss.start_coordinate_id, ss.end_coordinate_id, ss.shape_segment_desc
+         , ss.start_coordinate_id, ss.end_coordinate_id
          , ss.distance, ss.last_modified
     FROM shape_segments ss
     JOIN most_recent USING (shape_segment_id)
@@ -450,10 +450,10 @@ $result = db_query($restart_shape_segment_sequence);
 $migrate_shape_points_query  = "
     INSERT into {$table_prefix}_shape_points 
         (agency_id, shape_point_id, shape_segment_id
-       , shape_pt_lat, shape_pt_lon, shape_pt_sequence
+       , shape_pt_sequence
        , shape_dist_traveled, geog)
     SELECT agency_id, shape_point_id, sp.shape_segment_id 
-         , shape_pt_lat, shape_pt_lon, shape_pt_sequence
+         , shape_pt_sequence
          , shape_dist_traveled, (geom :: GEOGRAPHY) as geog
     FROM shape_points sp
     INNER JOIN {$table_prefix}_shape_segments USING (shape_segment_id)
