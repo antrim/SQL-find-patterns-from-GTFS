@@ -22,7 +22,7 @@ $agency_string = implode(",", $agency_array);
 
 $truncate_migrate_tables_query = "TRUNCATE 
     {$table_prefix}_timed_pattern_stops_nonnormalized
-  , {$table_prefix}_agency
+  , {$table_prefix}_agencies
   , {$table_prefix}_pattern_stops
   , {$table_prefix}_timed_pattern_stops
   , {$table_prefix}_timed_patterns
@@ -31,7 +31,7 @@ $truncate_migrate_tables_query = "TRUNCATE
   , {$table_prefix}_headsigns
   , {$table_prefix}_directions
   , {$table_prefix}_schedules
-  , {$table_prefix}_calendar
+  , {$table_prefix}_calendars
   , {$table_prefix}_calendar_bounds
   , {$table_prefix}_stops
   , {$table_prefix}_blocks
@@ -165,7 +165,7 @@ $migrate_timed_pattern_stops_nonnormalized_result = db_query($migrate_timed_patt
 echo "<br />\n" . $migrate_timed_pattern_stops_nonnormalized_query;
 
 $migrate_agency_query  = "
-    INSERT INTO {$table_prefix}_agency 
+    INSERT INTO {$table_prefix}_agencies
         (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id
        , agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info
        , query_tracking, last_modified, maintenance_start, gtfs_plus
@@ -277,7 +277,7 @@ $result = db_query($migrate_directions_query);
 
 // calendar
 $migrate_calendar_query  = "
-    INSERT into {$table_prefix}_calendar 
+    INSERT into {$table_prefix}_calendars
         (agency_id, calendar_id
        , label)
     SELECT agency_id, service_schedule_group_id AS calendar_id

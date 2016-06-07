@@ -1,4 +1,4 @@
-CREATE TABLE "public"."migrate_agency" ( 
+CREATE TABLE "public"."migrate_agencies" ( 
 	"agency_id" Serial NOT NULL,
 	"feed_id" SmallInt,
 	"agency_id_import" Character Varying( 100 ) DEFAULT NULL::character varying,
@@ -23,7 +23,7 @@ CREATE TABLE "public"."migrate_agency" (
 	"label" Character Varying( 2044 ) NOT NULL,
 	PRIMARY KEY ( "block_id" ) );
  
-CREATE TABLE "public"."migrate_calendar" ( 
+CREATE TABLE "public"."migrate_calendars" ( 
 	"agency_id" Integer NOT NULL,
 	"calendar_id" Serial NOT NULL,
 	"label" Character Varying( 2044 ) NOT NULL,
