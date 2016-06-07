@@ -36,8 +36,6 @@ INSERT INTO {$table_prefix}_timed_pattern_stops_nonnormalized
      one_trip, trips_list, stops_pattern, arrival_time_intervals, 
      departure_time_intervals, route_id, stop_headsign_id)
 
-
-
 WITH pattern_time_intervals AS (
     SELECT MIN(trips.trip_id) as one_trip
          , string_agg( trips.trip_id::text, ', ' ORDER BY sequences.min_arrival_time ) AS trips_list
