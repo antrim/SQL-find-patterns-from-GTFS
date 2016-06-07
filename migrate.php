@@ -37,7 +37,6 @@ $truncate_migrate_tables_query = "TRUNCATE
   , {$table_prefix}_blocks
   , {$table_prefix}_feeds
   , {$table_prefix}_shape_segments
-  , {$table_prefix}_shape_points
     RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
