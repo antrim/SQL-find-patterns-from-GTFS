@@ -390,6 +390,27 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
 
 }
 
+// shape_segments
+// Only copy the most recent segment (that with the largest shape_segment_id) 
+// for every group of segments with the same (to_stop_id, from_stop_id) pair!
+// "Older" segments are not used by GTFSManager anyhow.
+$migrate_shape_segments_query  = "
+    INSERT into {$table_prefix}_shape_segments 
+        (from_stop_id, to_stop_id, shape_segment_desc
+       , distance, last_modified )
+    WITH most_recent AS (
+         SELECT shape_segments.start_coordinate_id,
+            shape_segments.end_coordinate_id,
+            max(shape_segments.shape_segment_id) AS shape_segment_id
+           FROM shape_segments
+          GROUP BY shape_segments.start_coordinate_id, shape_segments.end_coordinate_id )
+    SELECT start_coordinate_id, stop_coordinate_id, shape_segment_desc
+         , distance, last_modified
+    FROM shape_segments
+    JOIN most_recent USING (shape_segment_id)";
+$result = db_query($migrate_shape_segments_query);
+
+
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
 // 1. Gather distinct actual travel segments from schedules -- not sure of the 
 // best way to do this. Basically "From stop_id to (next) stop_id" denotes a 
