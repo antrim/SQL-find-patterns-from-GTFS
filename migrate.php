@@ -46,6 +46,7 @@ WITH pattern_time_intervals AS (
         SELECT string_agg(stop_times.stop_id::text, ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern
              , stop_times.trip_id
              , MIN( stop_times.arrival_time ) AS min_arrival_time
+        FROM stop_times -- ED 2016-06-07 added this FROM, it looks like what the SELECT wanted.
         INNER JOIN trips ON stop_times.trip_id = trips.trip_id
         WHERE stop_times.agency_id IN ($agency_string) 
               AND trips.based_on IS NULL
