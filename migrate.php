@@ -14,6 +14,9 @@ $agency_string = implode(",",$agency_array);
 // So apparently trillium_gtfs_web will never be able to run truncate on the 
 // table created by aaron_super with an autoincrement counter
 // http://dba.stackexchange.com/questions/58282/error-must-be-owner-of-relation-user-account-id-seq
+//
+// ED. Addressed via changing owner of sequence, for example:
+// ALTER SEQUENCE play_migrate_blocks_block_id_seq OWNER TO trillium_gtfs_group ;
 
 $truncate_migrate_tables_query = "TRUNCATE 
     {$table_prefix}_timed_pattern_stops_nonnormalized, {$table_prefix}_agency, 
@@ -26,6 +29,8 @@ $truncate_migrate_tables_query = "TRUNCATE
     {$table_prefix}_blocks, {$table_prefix}_feed RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
+
+exit(0); // ED: exit early so we can examine the "truncated" tables.
 
 $migrate_timed_pattern_stops_nonnormalized_query  = "
 INSERT INTO {$table_prefix}_timed_pattern_stops_nonnormalized 
@@ -283,9 +288,13 @@ $migrate_calendar_bounds_query  = "
 $result = db_query($migrate_calendar_bounds_query);
 
 // blocks
-$migrate_blocks_query  = "INSERT into {$table_prefix}_blocks (agency_id, block_id, label)
-SELECT DISTINCT agency_id, block_id, block_label FROM blocks
-WHERE agency_id IN ($agency_string) AND block_id IS NOT NULL;";
+$migrate_blocks_query  = "
+    INSERT into {$table_prefix}_blocks 
+        (agency_id, block_id, label)
+    SELECT DISTINCT agency_id, block_id, block_label 
+    FROM blocks
+    WHERE agency_id IN ($agency_string) 
+          AND block_id IS NOT NULL;";
 $result = db_query($migrate_blocks_query);
 
 // stops
