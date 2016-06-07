@@ -198,6 +198,7 @@ CREATE TABLE "public"."play_migrate_shape_segments" (
 CREATE UNIQUE INDEX ON "public"."play_migrate_shape_segments" (from_stop_id, to_stop_id);
 CREATE INDEX ON "public"."play_migrate_shape_segments" (to_stop_id);
 
+/* 
 CREATE TABLE "public"."migrate_shape_points" (
     shape_point_id SERIAL,
     shape_segment_id integer not null,
@@ -210,7 +211,9 @@ CREATE INDEX ON "public"."migrate_shape_points" (agency_id);
 CREATE INDEX ON "public"."migrate_shape_points" (shape_pt_sequence);
 CREATE INDEX ON "public"."migrate_shape_points" (shape_segment_id);
 CLUSTER "public"."migrate_shape_points" USING migrate_shape_points_shape_segment_id_idx;
+*/
 
+/* 
 CREATE TABLE "public"."play_migrate_shape_points" (
     shape_point_id SERIAL,
     shape_segment_id integer not null,
@@ -223,6 +226,7 @@ CREATE INDEX ON "public"."play_migrate_shape_points" (agency_id);
 CREATE INDEX ON "public"."play_migrate_shape_points" (shape_pt_sequence);
 CREATE INDEX ON "public"."play_migrate_shape_points" (shape_segment_id);
 CLUSTER "public"."play_migrate_shape_points" USING play_migrate_shape_points_shape_segment_id_idx;
+*/
 
  
 ALTER TABLE "public"."migrate_agency" OWNER TO trillium_gtfs_web;
@@ -242,15 +246,14 @@ ALTER TABLE "public"."migrate_timed_pattern_stops_nonnormalized" OWNER TO trilli
 ALTER TABLE "public"."migrate_feed" OWNER TO trillium_gtfs_web;
 
 ALTER TABLE "public"."migrate_shape_segments" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_shape_points" OWNER TO trillium_gtfs_web;
+-- ALTER TABLE "public"."migrate_shape_points" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."play_migrate_shape_segments" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."play_migrate_shape_points" OWNER TO trillium_gtfs_web;
+-- ALTER TABLE "public"."play_migrate_shape_points" OWNER TO trillium_gtfs_web;
 
 alter sequence "public".migrate_shape_segments_shape_segment_id_seq owner to trillium_gtfs_web;
 alter sequence "public".play_migrate_shape_segments_shape_segment_id_seq owner to trillium_gtfs_web;
-alter sequence "public".migrate_shape_points_shape_point_id_seq owner to trillium_gtfs_web;
-alter sequence "public".play_migrate_shape_points_shape_point_id_seq owner to trillium_gtfs_web;
-
+-- alter sequence "public".migrate_shape_points_shape_point_id_seq owner to trillium_gtfs_web;
+-- alter sequence "public".play_migrate_shape_points_shape_point_id_seq owner to trillium_gtfs_web;
 
 
 CREATE OR REPLACE FUNCTION st_lon ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
@@ -261,4 +264,15 @@ CREATE OR REPLACE FUNCTION st_lat ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION a
   SELECT ST_Y( point :: geometry ); 
 $$ LANGUAGE SQL IMMUTABLE;
 
+CREATE OR REPLACE FUNCTION st_makeline ( points_or_lines GEOGRAPHY[] ) RETURNS GEOGRAPHY AS $$ 
+  SELECT st_makeline(points_or_lines :: GEOMETRY[]) :: GEOGRAPHY
+$$ LANGUAGE SQL IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION ST_GeogFromGeoJSON( geojson text ) RETURNS GEOGRAPHY AS $$ 
+  SELECT st_geomFromGeoJSON(geojson) :: GEOGRAPHY
+$$ LANGUAGE SQL IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION ST_NPoints( geog GEOGRAPHY ) RETURNS INTEGER AS $$ 
+  SELECT st_npoints(geog :: GEOMETRY)
+$$ LANGUAGE SQL IMMUTABLE;
 
