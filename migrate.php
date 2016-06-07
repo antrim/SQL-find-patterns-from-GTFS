@@ -120,7 +120,7 @@ SELECT timed_patterns.agency_id, agency.agency_name, routes.route_short_name
      , routes.route_long_name, directions.direction_label, trips.direction_id
      , headsigns.headsign_id, headsigns.headsign, stop_times.stop_id
      , dense_rank() over (partition by timed_pattern_id order by stop_times.stop_sequence) as stop_order
-     , timed_pattern_id,
+     , timed_pattern_id
      , stop_patterns.pattern_id
      , CASE WHEN stop_times.arrival_time IS NOT NULL 
            THEN (stop_times.arrival_time - min_arrival_time) 
