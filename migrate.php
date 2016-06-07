@@ -300,10 +300,10 @@ $migrate_stops_query  = "
     INSERT into {$table_prefix}_stops 
         (agency_id, stop_id, stop_code, platform_code, location_type, parent_station
        , stop_desc, stop_comments, location, zone_id
-       , city, direction_id, url, publish_status, timezone, stop_id)
+       , city, direction_id, url, publish_status, timezone)
     SELECT agency_id, stop_id, stop_code, platform_code, location_type, parent_station
          , stop_desc, stop_comments, geom, zone_id
-         , city, direction_id, stop_url, publish_status, stop_timezone, stop_id  
+         , city, direction_id, stop_url, publish_status, stop_timezone
     FROM stops
     WHERE agency_id IN ($agency_string);";
 $result = db_query($migrate_stops_query);
