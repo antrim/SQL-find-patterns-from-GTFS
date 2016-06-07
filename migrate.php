@@ -21,14 +21,24 @@ $agency_string = implode(",", $agency_array);
 // ALTER SEQUENCE play_migrate_blocks_block_id_seq OWNER TO trillium_gtfs_group ;
 
 $truncate_migrate_tables_query = "TRUNCATE 
-    {$table_prefix}_timed_pattern_stops_nonnormalized, {$table_prefix}_agency, 
-    {$table_prefix}_pattern_stop, {$table_prefix}_timed_pattern_stop, 
-    {$table_prefix}_timed_pattern, {$table_prefix}_routes, 
-    {$table_prefix}_pattern, 
-    {$table_prefix}_headsigns, {$table_prefix}_directions, 
-    {$table_prefix}_schedule, {$table_prefix}_calendar, 
-    {$table_prefix}_calendar_bounds, {$table_prefix}_stops, 
-    {$table_prefix}_blocks, {$table_prefix}_feed RESTART IDENTITY;";
+    {$table_prefix}_timed_pattern_stops_nonnormalized
+  , {$table_prefix}_agency
+  , {$table_prefix}_pattern_stop
+  , {$table_prefix}_timed_pattern_stop
+  , {$table_prefix}_timed_pattern
+  , {$table_prefix}_routes
+  , {$table_prefix}_pattern
+  , {$table_prefix}_headsigns
+  , {$table_prefix}_directions
+  , {$table_prefix}_schedule
+  , {$table_prefix}_calendar
+  , {$table_prefix}_calendar_bounds
+  , {$table_prefix}_stops
+  , {$table_prefix}_blocks
+  , {$table_prefix}_feed
+  , {$table_prefix}_shape_segments
+  , {$table_prefix}_shape_points
+    RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
 
