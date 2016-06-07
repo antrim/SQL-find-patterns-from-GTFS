@@ -162,7 +162,7 @@ ORDER BY pattern_id, timed_pattern_id ASC, stop_times.stop_sequence ASC";
 
 $migrate_timed_pattern_stops_nonnormalized_result = db_query($migrate_timed_pattern_stops_nonnormalized_query);
 
-echo $migrate_timed_pattern_stops_nonnormalized_query;
+echo "<br />\n" . $migrate_timed_pattern_stops_nonnormalized_query;
 
 $migrate_agency_query  = "
     INSERT INTO {$table_prefix}_agency 
@@ -191,7 +191,7 @@ $migrate_feeds_query  = "
             ON agency_group_assoc.agency_group_id = agency_groups.agency_group_id 
     WHERE agency_group_assoc.agency_id IN ($agency_string)";
 $migrate_feeds_result = db_query($migrate_feeds_query);
-echo "\n\n".$migrate_feeds_query."\n\n";
+echo "<br />\n" . "\n\n".$migrate_feeds_query."\n\n";
 
 // pattern_stop.sql
 $migrate_pattern_stop_query  = "
@@ -433,7 +433,7 @@ $get_least_unused_shape_segment_id = "
     FROM play_migrate_shape_segments";
 $result = db_query($get_least_unused_shape_segment_id);
 $least_unused_shape_segment_id = db_fetch_array($result)[0];
-echo "least_unused_shape_segment_id $least_unused_shape_segment_id";
+echo "<br />\n least_unused_shape_segment_id $least_unused_shape_segment_id";
 $restart_shape_segment_sequence = "
     ALTER SEQUENCE play_migrate_shape_segments_shape_segment_id_seq 
     RESTART WITH $least_unused_shape_segment_id
@@ -460,7 +460,7 @@ $get_least_unused_shape_point_id = "
     FROM play_migrate_shape_points";
 $result = db_query($get_least_unused_shape_point_id);
 $least_unused_shape_point_id = db_fetch_array($result)[0];
-echo "least_unused_shape_point_id $least_unused_shape_point_id";
+echo "<br />\n least_unused_shape_point_id $least_unused_shape_point_id";
 $restart_shape_point_sequence = "
     ALTER SEQUENCE play_migrate_shape_points_shape_point_id_seq 
     RESTART WITH $least_unused_shape_point_id
