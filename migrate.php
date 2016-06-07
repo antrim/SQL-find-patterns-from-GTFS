@@ -396,7 +396,8 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
 // "Older" segments are not used by GTFSManager anyhow.
 $migrate_shape_segments_query  = "
     INSERT into {$table_prefix}_shape_segments 
-        (from_stop_id, to_stop_id, shape_segment_desc
+        (shape_segment_id
+       , from_stop_id, to_stop_id, shape_segment_desc
        , distance, last_modified )
     WITH most_recent AS (
          SELECT shape_segments.start_coordinate_id,
@@ -404,11 +405,49 @@ $migrate_shape_segments_query  = "
             max(shape_segments.shape_segment_id) AS shape_segment_id
            FROM shape_segments
           GROUP BY shape_segments.start_coordinate_id, shape_segments.end_coordinate_id )
-    SELECT ss.start_coordinate_id, ss.end_coordinate_id, ss.shape_segment_desc
+    SELECT ss.shape_segment_id
+         , ss.start_coordinate_id, ss.end_coordinate_id, ss.shape_segment_desc
          , ss.distance, ss.last_modified
     FROM shape_segments ss
-    JOIN most_recent USING (shape_segment_id)";
+    JOIN most_recent USING (shape_segment_id)
+    WHERE ss.start_coordinate_id IS NOT NULL 
+          AND ss.end_coordinate_id IS NOT NULL
+    ";
 $result = db_query($migrate_shape_segments_query);
+
+
+$get_least_unused_shape_segment_id = "
+    SELECT MAX(shape_segment_id)
+    FROM play_migrate_shape_segments";
+$result = db_query($get_least_unused_shape_segment_id);
+$least_unused_shape_segment_id = db_fetch_array($result)[0];
+echo "least_unused_shape_segment_id $least_unused_shape_segment_id";
+$restart_shape_segment_sequence = "
+    ALTER SEQUENCE play_migrate_shape_segments_shape_segment_id_seq 
+    RESTART WITH $least_unused_shape_segment_id
+    ";
+$result = db_query($restart_shape_segment_sequence);
+
+
+
+$migrate_shape_points_query  = "
+    INSERT into {$table_prefix}_shape_points 
+        (from_stop_id, to_stop_id, shape_segment_desc
+       , distance, last_modified )
+    WITH most_recent AS (
+         SELECT shape_points.start_coordinate_id,
+            shape_points.end_coordinate_id,
+            max(shape_points.shape_segment_id) AS shape_segment_id
+           FROM shape_points
+          GROUP BY shape_points.start_coordinate_id, shape_points.end_coordinate_id )
+    SELECT ss.start_coordinate_id, ss.end_coordinate_id, ss.shape_segment_desc
+         , ss.distance, ss.last_modified
+    FROM shape_points ss
+    JOIN most_recent USING (shape_segment_id)
+    WHERE ss.start_coordinate_id IS NOT NULL 
+          AND ss.end_coordinate_id IS NOT NULL";
+$result = db_query($migrate_shape_points_query);
+
 
 
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
