@@ -433,22 +433,29 @@ $result = db_query($restart_shape_segment_sequence);
 
 $migrate_shape_points_query  = "
     INSERT into {$table_prefix}_shape_points 
-        (from_stop_id, to_stop_id, shape_segment_desc
-       , distance, last_modified )
-    WITH most_recent AS (
-         SELECT shape_points.start_coordinate_id,
-            shape_points.end_coordinate_id,
-            max(shape_points.shape_segment_id) AS shape_segment_id
-           FROM shape_points
-          GROUP BY shape_points.start_coordinate_id, shape_points.end_coordinate_id )
-    SELECT ss.start_coordinate_id, ss.end_coordinate_id, ss.shape_segment_desc
-         , ss.distance, ss.last_modified
-    FROM shape_points ss
-    JOIN most_recent USING (shape_segment_id)
-    WHERE ss.start_coordinate_id IS NOT NULL 
-          AND ss.end_coordinate_id IS NOT NULL";
+        (agency_id, shape_point_id, shape_segment_id
+       , shape_pt_lat, shape_pt_lon, shape_pt_sequence
+       , shape_dist_traveled, geog)
+    SELECT agency_id, shape_point_id, sp.shape_segment_id, 
+         , shape_pt_lat, shape_pt_lon, shape_pt_sequence
+         , shape_dist_traveled, (geom :: GEOGRAPHY) as geog)
+    FROM shape_points sp
+    INNER JOIN {$table_prefix}_shape_segments USING (shape_segment_id)
+";
 $result = db_query($migrate_shape_points_query);
 
+
+$get_least_unused_shape_point_id = "
+    SELECT MAX(shape_point_id)
+    FROM play_migrate_shape_points";
+$result = db_query($get_least_unused_shape_point_id);
+$least_unused_shape_point_id = db_fetch_array($result)[0];
+echo "least_unused_shape_point_id $least_unused_shape_point_id";
+$restart_shape_point_sequence = "
+    ALTER SEQUENCE play_migrate_shape_points_shape_point_id_seq 
+    RESTART WITH $least_unused_shape_point_id
+    ";
+$result = db_query($restart_shape_point_sequence);
 
 
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
