@@ -23,19 +23,19 @@ $agency_string = implode(",", $agency_array);
 $truncate_migrate_tables_query = "TRUNCATE 
     {$table_prefix}_timed_pattern_stops_nonnormalized
   , {$table_prefix}_agency
-  , {$table_prefix}_pattern_stop
-  , {$table_prefix}_timed_pattern_stop
-  , {$table_prefix}_timed_pattern
+  , {$table_prefix}_pattern_stops
+  , {$table_prefix}_timed_pattern_stops
+  , {$table_prefix}_timed_patterns
   , {$table_prefix}_routes
-  , {$table_prefix}_pattern
+  , {$table_prefix}_patterns
   , {$table_prefix}_headsigns
   , {$table_prefix}_directions
-  , {$table_prefix}_schedule
+  , {$table_prefix}_schedules
   , {$table_prefix}_calendar
   , {$table_prefix}_calendar_bounds
   , {$table_prefix}_stops
   , {$table_prefix}_blocks
-  , {$table_prefix}_feed
+  , {$table_prefix}_feeds
   , {$table_prefix}_shape_segments
   , {$table_prefix}_shape_points
     RESTART IDENTITY;";
@@ -181,7 +181,7 @@ $migrate_agency_query  = "
 $migrate_agency_result = db_query($migrate_agency_query);
 
 $migrate_feeds_query  = "
-    INSERT INTO {$table_prefix}_feed
+    INSERT INTO {$table_prefix}_feeds
         (id, feed_name, contact_email
        , contact_url, license, last_modified)  
     SELECT DISTINCT agency_groups.agency_group_id, group_name, feed_contact_email
@@ -195,7 +195,7 @@ echo "<br />\n" . "\n\n".$migrate_feeds_query."\n\n";
 
 // pattern_stop.sql
 $migrate_pattern_stop_query  = "
-    INSERT into {$table_prefix}_pattern_stop
+    INSERT into {$table_prefix}_pattern_stops
     SELECT DISTINCT  agency_id, pattern_id, stop_order, stop_id 
     FROM {$table_prefix}_timed_pattern_stops_nonnormalized
     ORDER BY agency_id, pattern_id, stop_order";
@@ -203,7 +203,7 @@ $result = db_query($migrate_pattern_stop_query);
 
 // timed_pattern_intervals.sql
 $migrate_timed_pattern_stop_query  = "
-    INSERT into {$table_prefix}_timed_pattern_stop 
+    INSERT into {$table_prefix}_timed_pattern_stops 
         (agency_id, timed_pattern_id, stop_order, arrival_time, departure_time
        , pickup_type, drop_off_type, headsign_id)
     SELECT DISTINCT agency_id, timed_pattern_id, stop_order, arrival_time, departure_time
@@ -214,7 +214,7 @@ $result = db_query($migrate_timed_pattern_stop_query);
 
 // timed_pattern.sql
 $migrate_timed_pattern_query  = "
-    INSERT into {$table_prefix}_timed_pattern (agency_id, timed_pattern_id, pattern_id)
+    INSERT into {$table_prefix}_timed_patterns (agency_id, timed_pattern_id, pattern_id)
     SELECT DISTINCT agency_id, timed_pattern_id, pattern_id
     FROM {$table_prefix}_timed_pattern_stops_nonnormalized
     ORDER BY agency_id, pattern_id, timed_pattern_id";
@@ -237,7 +237,7 @@ $result = db_query($migrate_routes_stop_query);
 // some patterns may be used by multiple routes/directions!!!!
 // one way to test this is: SELECT DISTINCT ON (pattern_id) agency_id, pattern_id, route_id, direction_id
 $migrate_pattern_query  = "
-    INSERT into {$table_prefix}_pattern (agency_id, pattern_id, route_id, direction_id)
+    INSERT into {$table_prefix}_patterns (agency_id, pattern_id, route_id, direction_id)
     SELECT DISTINCT agency_id, pattern_id, route_id, direction_id
     FROM {$table_prefix}_timed_pattern_stops_nonnormalized
     ORDER BY  pattern_id, agency_id, route_id, direction_id";
@@ -331,7 +331,7 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
     $trips_list = $row['trips_list'];
 
     $schedule_insert_query = "
-       INSERT into {$table_prefix}_schedule 
+       INSERT into {$table_prefix}_schedules 
             (agency_id, timed_pattern_id, calendar_id
            , start_time
            , end_time, headway, block_id
