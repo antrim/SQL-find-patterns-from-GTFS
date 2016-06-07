@@ -252,3 +252,13 @@ alter sequence "public".migrate_shape_points_shape_point_id_seq owner to trilliu
 alter sequence "public".play_migrate_shape_points_shape_point_id_seq owner to trillium_gtfs_web;
 
 
+
+CREATE OR REPLACE FUNCTION st_lon ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
+  SELECT ST_X( point :: geometry ); 
+$$ LANGUAGE SQL IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION st_lat ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
+  SELECT ST_Y( point :: geometry ); 
+$$ LANGUAGE SQL IMMUTABLE;
+
+
