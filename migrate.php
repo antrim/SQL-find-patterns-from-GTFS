@@ -6,11 +6,12 @@ $live = false;
 set_time_limit(7200);
 
 $table_prefix = "play_migrate";
-$agency_array = array (1,3,175,267,392);
+$agency_array = array (1, 3, 175, 267, 392);
 
 $agency_string = implode(",",$agency_array);
 
-// so apparently trillium_gtfs_web will never be able to run truncate on the table created by aaron_super with an autoincrement counter
+// So apparently trillium_gtfs_web will never be able to run truncate on the 
+// table created by aaron_super with an autoincrement counter
 // http://dba.stackexchange.com/questions/58282/error-must-be-owner-of-relation-user-account-id-seq
 
 $truncate_migrate_tables_query = "TRUNCATE 
@@ -374,15 +375,24 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
 }
 
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
-// 1. Gather distinct actual travel segments from schedules -- not sure of the best way to do this. Basically "From stop_id to (next) stop_id" denotes a travel segment -- which might occur in a whole number of trips and even routes.
+// 1. Gather distinct actual travel segments from schedules -- not sure of the 
+// best way to do this. Basically "From stop_id to (next) stop_id" denotes a 
+// travel segment -- which might occur in a whole number of trips and even 
+// routes.
 
 // I'm pretty sure the below SQL will be useful and efficient for step 1.
+//
 // SELECT DISTINCT stop_id as stop_id_start, thenextstop as stop_id_end, agency_id
 // FROM (SELECT agency_id, stop_id, lag(stop_id) over (PARTITION BY trip_id order by stop_sequence) AS thenextstop FROM stop_times WHERE agency_id = 1) s
 // WHERE thenextstop IS NOT NULL order by stop_id_start
  
-// 2. Then select the latest alignment for that segment (if it exists). In cases where one alignment matches the start and end stop ID, I believe that with the largest segment ID is the last stored, and is the one currently in use.
+// 2. Then select the latest alignment for that segment (if it exists). In 
+// cases where one alignment matches the start and end stop ID, I believe that 
+// with the largest segment ID is the last stored, and is the one currently in 
+// use.
+//
 // 3. Discard vertices that are within 7 feet of a previous.
+//
 // 4. Transfer to the migrate tables.
 
 // Proposed tests:
