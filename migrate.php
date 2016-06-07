@@ -429,7 +429,7 @@ $result = db_query($migrate_shape_segments_query);
 
 
 $get_least_unused_shape_segment_id = "
-    SELECT MAX(shape_segment_id)
+    SELECT 1 + MAX(shape_segment_id)
     FROM play_migrate_shape_segments";
 $result = db_query($get_least_unused_shape_segment_id);
 $least_unused_shape_segment_id = db_fetch_array($result)[0];
@@ -441,6 +441,12 @@ $restart_shape_segment_sequence = "
 $result = db_query($restart_shape_segment_sequence);
 
 
+// Migrate shape_points.
+//
+// Note the INNER JOIN against {$table_prefix}_shape_segments
+// so that we only migrate shape_points corresponding to "current" 
+// shape_segments.
+//
 $migrate_shape_points_query  = "
     INSERT into {$table_prefix}_shape_points 
         (agency_id, shape_point_id, shape_segment_id
@@ -456,7 +462,7 @@ $result = db_query($migrate_shape_points_query);
 
 
 $get_least_unused_shape_point_id = "
-    SELECT MAX(shape_point_id)
+    SELECT 1 + MAX(shape_point_id)
     FROM play_migrate_shape_points";
 $result = db_query($get_least_unused_shape_point_id);
 $least_unused_shape_point_id = db_fetch_array($result)[0];
@@ -492,7 +498,7 @@ $result = db_query($restart_shape_point_sequence);
 // Proposed tests:
 // Vertices are separated by at least 7 feet.
 
-echo "Migration successful."
+echo "<br / >\n" . "Migration successful."
 
 ?>
 </body></html>
