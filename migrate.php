@@ -1,3 +1,5 @@
+<html><head><title>migrate.php!</title><head>
+<body>
 <?php
 
 // require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
@@ -429,7 +431,6 @@ $restart_shape_segment_sequence = "
 $result = db_query($restart_shape_segment_sequence);
 
 
-
 $migrate_shape_points_query  = "
     INSERT into {$table_prefix}_shape_points 
         (from_stop_id, to_stop_id, shape_segment_desc
@@ -477,3 +478,4 @@ $result = db_query($migrate_shape_points_query);
 echo "Migration successful."
 
 ?>
+</body></html>
