@@ -410,7 +410,8 @@ $migrate_shape_segments_query  = "
     INSERT into {$table_prefix}_shape_segments 
         (shape_segment_id
        , from_stop_id, to_stop_id
-       , distance, last_modified )
+       , last_modified
+       , geog )
     WITH most_recent AS (
          SELECT shape_segments.start_coordinate_id,
             shape_segments.end_coordinate_id,
@@ -419,11 +420,14 @@ $migrate_shape_segments_query  = "
           GROUP BY shape_segments.start_coordinate_id, shape_segments.end_coordinate_id )
     SELECT ss.shape_segment_id
          , ss.start_coordinate_id, ss.end_coordinate_id
-         , ss.distance, ss.last_modified
+         , ss.last_modified
+         , st_makeline(array_agg(shape_points.geom::geography ORDER BY shape_points.shape_pt_sequence))
     FROM shape_segments ss
-    JOIN most_recent USING (shape_segment_id)
+    INNER JOIN most_recent USING (shape_segment_id)
+    INNER JOIN shape_points USING (shape_segment_id)
     WHERE ss.start_coordinate_id IS NOT NULL 
           AND ss.end_coordinate_id IS NOT NULL
+    GROUP BY ss.shape_segment_id, ss.start_coordinate_id, ss.end_coordinate_id, ss.last_modified
     ";
 $result = db_query($migrate_shape_segments_query);
 
@@ -451,10 +455,13 @@ $migrate_shape_points_query  = "
     INSERT into {$table_prefix}_shape_points 
         (agency_id, shape_point_id, shape_segment_id
        , shape_pt_sequence
-       , shape_dist_traveled, geog)
+       , shape_dist_traveled
+       , geog)
     SELECT agency_id, shape_point_id, sp.shape_segment_id 
          , shape_pt_sequence
-         , shape_dist_traveled, (geom :: GEOGRAPHY) as geog
+         -- , shape_dist_traveled, (geom :: GEOGRAPHY) as geog
+         , shape_dist_traveled
+         , ST_SetSRID(ST_Point(shape_pt_lon, shape_pt_lat), 4326)::GEOGRAPHY as geog
     FROM shape_points sp
     INNER JOIN {$table_prefix}_shape_segments USING (shape_segment_id)
 ";
