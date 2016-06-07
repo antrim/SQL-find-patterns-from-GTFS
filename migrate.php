@@ -1,6 +1,7 @@
 <?php
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
+// require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
+require_once './includes/config.inc.php';
 
 $live = false;
 set_time_limit(7200);
