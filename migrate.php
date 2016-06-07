@@ -436,7 +436,7 @@ $migrate_shape_points_query  = "
         (agency_id, shape_point_id, shape_segment_id
        , shape_pt_lat, shape_pt_lon, shape_pt_sequence
        , shape_dist_traveled, geog)
-    SELECT agency_id, shape_point_id, sp.shape_segment_id, 
+    SELECT agency_id, shape_point_id, sp.shape_segment_id 
          , shape_pt_lat, shape_pt_lon, shape_pt_sequence
          , shape_dist_traveled, (geom :: GEOGRAPHY) as geog)
     FROM shape_points sp
