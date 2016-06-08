@@ -429,6 +429,7 @@ $migrate_shape_segments_query  = "
 $result = db_query($migrate_shape_segments_query);
 
 
+/* 
 $get_least_unused_shape_segment_id = "
     SELECT 1 + MAX(shape_segment_id)
     FROM play_migrate_shape_segments";
@@ -440,6 +441,7 @@ $restart_shape_segment_sequence = "
     RESTART WITH $least_unused_shape_segment_id
     ";
 $result = db_query($restart_shape_segment_sequence);
+ */
 
 // Migrate shape_points.
 //
