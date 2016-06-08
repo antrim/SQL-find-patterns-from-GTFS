@@ -211,15 +211,15 @@ ALTER TABLE "public"."migrate_shape_segments" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."play_migrate_shape_segments" OWNER TO trillium_gtfs_web;
 
 
-CREATE OR REPLACE FUNCTION st_lon ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
+CREATE OR REPLACE FUNCTION ST_Lon ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
   SELECT ST_X( point :: geometry ); 
 $$ LANGUAGE SQL IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION st_lat ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
+CREATE OR REPLACE FUNCTION ST_Lat ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
   SELECT ST_Y( point :: geometry ); 
 $$ LANGUAGE SQL IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION st_makeline ( points_or_lines GEOGRAPHY[] ) RETURNS GEOGRAPHY AS $$ 
+CREATE OR REPLACE FUNCTION ST_MakeLine ( points_or_lines GEOGRAPHY[] ) RETURNS GEOGRAPHY AS $$ 
   SELECT st_makeline(points_or_lines :: GEOMETRY[]) :: GEOGRAPHY
 $$ LANGUAGE SQL IMMUTABLE;
 
