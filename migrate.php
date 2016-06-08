@@ -121,8 +121,8 @@ WITH pattern_time_intervals AS (
 , stop_patterns AS (
 
     WITH unique_patterns AS(
-    SELECT DISTINCT string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern,trips.route_id,trips.direction_id
-
+    SELECT DISTINCT string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern,trips.route_id
+                  , trips.direction_id
          FROM stop_times
          inner join trips on stop_times.trip_id = trips.trip_id
          WHERE trips.agency_id IN ($agency_string) AND trips.based_on IS NULL
@@ -428,59 +428,6 @@ $migrate_shape_segments_query  = "
     ";
 $result = db_query($migrate_shape_segments_query);
 
-
-/* 
-$get_least_unused_shape_segment_id = "
-    SELECT 1 + MAX(shape_segment_id)
-    FROM play_migrate_shape_segments";
-$result = db_query($get_least_unused_shape_segment_id);
-$least_unused_shape_segment_id = db_fetch_array($result)[0];
-echo "<br />\n least_unused_shape_segment_id $least_unused_shape_segment_id";
-$restart_shape_segment_sequence = "
-    ALTER SEQUENCE play_migrate_shape_segments_shape_segment_id_seq 
-    RESTART WITH $least_unused_shape_segment_id
-    ";
-$result = db_query($restart_shape_segment_sequence);
- */
-
-// Migrate shape_points.
-//
-// Note the INNER JOIN against {$table_prefix}_shape_segments
-// so that we only migrate shape_points corresponding to "current" 
-// shape_segments.
-//
-/*
-$migrate_shape_points_query  = "
-    INSERT into {$table_prefix}_shape_points 
-        (agency_id, shape_point_id, shape_segment_id
-       , shape_pt_sequence
-       , shape_dist_traveled
-       , geog)
-    SELECT agency_id, shape_point_id, sp.shape_segment_id 
-         , shape_pt_sequence
-         -- , shape_dist_traveled, (geom :: GEOGRAPHY) as geog
-         , shape_dist_traveled
-         , ST_SetSRID(ST_Point(shape_pt_lon, shape_pt_lat), 4326)::GEOGRAPHY as geog
-    FROM shape_points sp
-    INNER JOIN {$table_prefix}_shape_segments USING (shape_segment_id)
-";
-$result = db_query($migrate_shape_points_query);
- */
-
-
-/* 
-$get_least_unused_shape_point_id = "
-    SELECT 1 + MAX(shape_point_id)
-    FROM play_migrate_shape_points";
-$result = db_query($get_least_unused_shape_point_id);
-$least_unused_shape_point_id = db_fetch_array($result)[0];
-echo "<br />\n least_unused_shape_point_id $least_unused_shape_point_id";
-$restart_shape_point_sequence = "
-    ALTER SEQUENCE play_migrate_shape_points_shape_point_id_seq 
-    RESTART WITH $least_unused_shape_point_id
-    ";
-$result = db_query($restart_shape_point_sequence);
- */
 
 
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
