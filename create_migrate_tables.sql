@@ -190,6 +190,22 @@ CREATE TABLE "public"."play_migrate_shape_segments" (
 CREATE UNIQUE INDEX ON "public"."play_migrate_shape_segments" (from_stop_id, to_stop_id);
 CREATE INDEX ON "public"."play_migrate_shape_segments" (to_stop_id);
 
+CREATE TABLE "public"."migrate_pattern_custom_shape_segments" (
+    pattern_id INTEGER,
+    from_stop_id INTEGER,
+    to_stop_id INTEGER,
+    geog GEOGRAPHY
+);
+CREATE UNIQUE INDEX ON "public"."migrate_pattern_custom_shape_segments" (pattern_id, from_stop_id, to_stop_id);
+
+CREATE TABLE "public"."play_migrate_pattern_custom_shape_segments" (
+    pattern_id INTEGER,
+    from_stop_id INTEGER,
+    to_stop_id INTEGER,
+    geog GEOGRAPHY
+);
+CREATE UNIQUE INDEX ON "public"."play_migrate_pattern_custom_shape_segments" (pattern_id, from_stop_id, to_stop_id);
+
  
 ALTER TABLE "public"."migrate_agency" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_blocks" OWNER TO trillium_gtfs_web;
@@ -210,6 +226,8 @@ ALTER TABLE "public"."migrate_feed" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_shape_segments" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."play_migrate_shape_segments" OWNER TO trillium_gtfs_web;
 
+ALTER TABLE "public"."migrate_pattern_custom_shape_segments" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."play_migrate_pattern_custom_shape_segments" OWNER TO trillium_gtfs_web;
 
 CREATE OR REPLACE FUNCTION ST_Lon ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
   SELECT ST_X( point :: geometry ); 

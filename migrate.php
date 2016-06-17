@@ -37,6 +37,7 @@ $truncate_migrate_tables_query = "TRUNCATE
   , {$table_prefix}_blocks
   , {$table_prefix}_feeds
   , {$table_prefix}_shape_segments
+  , {$table_prefix}_pattern_custom_shape_segments
     RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
@@ -434,7 +435,6 @@ $remove_shape_segment_orphans_query = "
           OR to_stop_id NOT IN (SELECT stop_id FROM play_migrate_stops);
     ";
 $result = db_query($remove_shape_segment_orphans_query);
-
 
 
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
