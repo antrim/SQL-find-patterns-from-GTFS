@@ -428,6 +428,13 @@ $migrate_shape_segments_query  = "
     ";
 $result = db_query($migrate_shape_segments_query);
 
+$remove_shape_segment_orphans_query = "
+    DELETE FROM play_migrate_shape_segments 
+    WHERE from_stop_id NOT IN (SELECT stop_id FROM play_migrate_stops) 
+          OR to_stop_id NOT IN (SELECT stop_id FROM play_migrate_stops);
+    ";
+$result = db_query($remove_shape_segment_orphans_query);
+
 
 
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
