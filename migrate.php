@@ -473,6 +473,14 @@ $calendar_date_service_exceptions_query = "
   ";
 $result = db_query($calendar_date_service_exceptions_query);
 
+$migrate_fare_attributes_query = "
+    INSERT INTO {$table_prefix}_fare_attributes
+        (agency_id, fare_id, price, currency_type, payment_method
+       , transfers, transfer_duration, last_modified, fare_id_import)
+    SELECT agency_id, fare_id, price, currency_type, payment_method
+         , transfers, transfer_duration, last_modified, fare_id_import
+    FROM fare_attributes;";
+$result = db_query($migrate_fare_attributes_query);
 
 $get_least_unused_fare_id = "
     SELECT 1 + MAX(fare_id)
@@ -487,6 +495,15 @@ $restart_fare_attributes_sequence = "
 $result = db_query($restart_fare_attributes_sequence);
 
 
+$migrate_fare_rider_catgories_query = "
+    INSERT INTO {$table_prefix}_fare_rider_catgories
+        (fare_rider_category_id, fare_id, rider_category_custom_id 
+       , price, agency_id) 
+    SELECT fare_rider_category_id, fare_id, rider_category_custom_id 
+         , price, agency_id
+    FROM fare_rider_catgories;";
+$result = db_query($migrate_fare_rider_catgories_query);
+
 $get_least_unused_fare_rider_category_id = "
     SELECT 1 + MAX(fare_rider_category_id)
     FROM {$table_prefix}_fare_rider_categories";
@@ -498,6 +515,19 @@ $restart_fare_rider_categories_sequence = "
     RESTART WITH $least_unused_fare_rider_category_id
     ";
 $result = db_query($restart_fare_rider_categories_sequence);
+
+$migrate_fare_rules_query = "
+    INSERT INTO {$table_prefix}_fare_rules 
+        (fare_rule_id, fare_id, route_id, origin_id
+       , destination_id, contains_id, agency_id
+       , last_modified, fare_id_import, route_id_import
+       , origin_id_import, destination_id_import, contains_id_import)
+    SELECT fare_rule_id, fare_id, route_id, origin_id
+         , destination_id, contains_id, agency_id
+         , last_modified, fare_id_import, route_id_import
+         , origin_id_import, destination_id_import, contains_id_import
+    FROM fare_rules; ";
+$result = db_query($migrate_fare_rules_query);
 
 $get_least_unused_fare_rule_id = "
     SELECT 1 + MAX(fare_rule_id)
