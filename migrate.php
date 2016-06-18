@@ -501,7 +501,7 @@ $migrate_fare_rider_categories_query = "
        , price, agency_id) 
     SELECT fare_rider_category_id, fare_id, rider_category_custom_id 
          , price, agency_id
-    FROM fare_rider_catgories;";
+    FROM fare_rider_categories;";
 $result = db_query($migrate_fare_rider_categories_query);
 
 $get_least_unused_fare_rider_category_id = "
