@@ -38,6 +38,8 @@ $truncate_migrate_tables_query = "TRUNCATE
   , {$table_prefix}_feeds
   , {$table_prefix}_shape_segments
   , {$table_prefix}_pattern_custom_shape_segments
+  , {$table_prefix}_calendar_dates
+  , {$table_prefix}_calendar_date_service_exceptions
     RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
