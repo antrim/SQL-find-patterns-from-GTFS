@@ -474,6 +474,43 @@ $calendar_date_service_exceptions_query = "
 $result = db_query($calendar_date_service_exceptions_query);
 
 
+$get_least_unused_fare_attributes_id = "
+    SELECT 1 + MAX(fare_attributes_id)
+    FROM {$table_prefix}_fare_attributess";
+$result = db_query($get_least_unused_fare_attributes_id);
+$least_unused_fare_attributes_id = db_fetch_array($result)[0];
+echo "<br />\n least_unused_fare_attributes_id $least_unused_fare_attributes_id";
+$restart_fare_attributes_sequence = "
+    ALTER SEQUENCE {$table_prefix}_fare_attributess_fare_attributes_id_seq 
+    RESTART WITH $least_unused_fare_attributes_id
+    ";
+$result = db_query($restart_fare_attributes_sequence);
+
+
+$get_least_unused_fare_rider_categories_id = "
+    SELECT 1 + MAX(fare_rider_categories_id)
+    FROM {$table_prefix}_fare_rider_categoriess";
+$result = db_query($get_least_unused_fare_rider_categories_id);
+$least_unused_fare_rider_categories_id = db_fetch_array($result)[0];
+echo "<br />\n least_unused_fare_rider_categories_id $least_unused_fare_rider_categories_id";
+$restart_fare_rider_categories_sequence = "
+    ALTER SEQUENCE {$table_prefix}_fare_rider_categoriess_fare_rider_categories_id_seq 
+    RESTART WITH $least_unused_fare_rider_categories_id
+    ";
+$result = db_query($restart_fare_rider_categories_sequence);
+
+$get_least_unused_fare_rules_id = "
+    SELECT 1 + MAX(fare_rules_id)
+    FROM {$table_prefix}_fare_ruless";
+$result = db_query($get_least_unused_fare_rules_id);
+$least_unused_fare_rules_id = db_fetch_array($result)[0];
+echo "<br />\n least_unused_fare_rules_id $least_unused_fare_rules_id";
+$restart_fare_rules_sequence = "
+    ALTER SEQUENCE {$table_prefix}_fare_ruless_fare_rules_id_seq 
+    RESTART WITH $least_unused_fare_rules_id
+    ";
+$result = db_query($restart_fare_rules_sequence);
+
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
 // 1. Gather distinct actual travel segments from schedules -- not sure of the 
 // best way to do this. Basically "From stop_id to (next) stop_id" denotes a 
