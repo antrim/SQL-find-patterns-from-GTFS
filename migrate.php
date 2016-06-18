@@ -466,7 +466,7 @@ $calendar_date_service_exceptions_query = "
        , agency_id, last_modified) 
     SELECT calendar_date_id, exception_type, service_exception
          , agency_id, last_modified
-    FROM calendar_date_service_exception;
+    FROM calendar_date_service_exceptions;
   ";
 $result = db_query($calendar_date_service_exceptions_query);
 
