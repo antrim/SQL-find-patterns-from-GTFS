@@ -40,6 +40,9 @@ $truncate_migrate_tables_query = "TRUNCATE
   , {$table_prefix}_pattern_custom_shape_segments
   , {$table_prefix}_calendar_dates
   , {$table_prefix}_calendar_date_service_exceptions
+  , {$table_prefix}_fare_attributes
+  , {$table_prefix}_fare_rider_categories
+  , {$table_prefix}_fare_rules
     RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
