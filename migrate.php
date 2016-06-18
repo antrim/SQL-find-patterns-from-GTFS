@@ -474,40 +474,40 @@ $calendar_date_service_exceptions_query = "
 $result = db_query($calendar_date_service_exceptions_query);
 
 
-$get_least_unused_fare_attributes_id = "
-    SELECT 1 + MAX(fare_attributes_id)
+$get_least_unused_fare_id = "
+    SELECT 1 + MAX(fare_id)
     FROM {$table_prefix}_fare_attributes";
-$result = db_query($get_least_unused_fare_attributes_id);
-$least_unused_fare_attributes_id = db_fetch_array($result)[0];
-echo "<br />\n least_unused_fare_attributes_id $least_unused_fare_attributes_id";
+$result = db_query($get_least_unused_fare_id);
+$least_unused_fare_id = db_fetch_array($result)[0];
+echo "<br />\n least_unused_fare_attributes_id $least_unused_fare_id";
 $restart_fare_attributes_sequence = "
-    ALTER SEQUENCE {$table_prefix}_fare_attributes_fare_attributes_id_seq 
-    RESTART WITH $least_unused_fare_attributes_id
+    ALTER SEQUENCE {$table_prefix}_fare_attributes_fare_id_seq 
+    RESTART WITH $least_unused_fare_id
     ";
 $result = db_query($restart_fare_attributes_sequence);
 
 
-$get_least_unused_fare_rider_categories_id = "
-    SELECT 1 + MAX(fare_rider_categories_id)
+$get_least_unused_fare_rider_category_id = "
+    SELECT 1 + MAX(fare_rider_category_id)
     FROM {$table_prefix}_fare_rider_categories";
-$result = db_query($get_least_unused_fare_rider_categories_id);
-$least_unused_fare_rider_categories_id = db_fetch_array($result)[0];
-echo "<br />\n least_unused_fare_rider_categories_id $least_unused_fare_rider_categories_id";
+$result = db_query($get_least_unused_fare_rider_category_id);
+$least_unused_fare_rider_category_id = db_fetch_array($result)[0];
+echo "<br />\n least_unused_fare_rider_category_id $least_unused_fare_rider_category_id";
 $restart_fare_rider_categories_sequence = "
-    ALTER SEQUENCE {$table_prefix}_fare_rider_categories_fare_rider_categories_id_seq 
-    RESTART WITH $least_unused_fare_rider_categories_id
+    ALTER SEQUENCE {$table_prefix}_fare_rider_categories_fare_rider_category_id_seq 
+    RESTART WITH $least_unused_fare_rider_category_id
     ";
 $result = db_query($restart_fare_rider_categories_sequence);
 
-$get_least_unused_fare_rules_id = "
-    SELECT 1 + MAX(fare_rules_id)
+$get_least_unused_fare_rule_id = "
+    SELECT 1 + MAX(fare_rule_id)
     FROM {$table_prefix}_fare_rules";
-$result = db_query($get_least_unused_fare_rules_id);
-$least_unused_fare_rules_id = db_fetch_array($result)[0];
-echo "<br />\n least_unused_fare_rules_id $least_unused_fare_rules_id";
+$result = db_query($get_least_unused_fare_rule_id);
+$least_unused_fare_rule_id = db_fetch_array($result)[0];
+echo "<br />\n least_unused_fare_rule_id $least_unused_fare_rule_id";
 $restart_fare_rules_sequence = "
-    ALTER SEQUENCE {$table_prefix}_fare_rules_fare_rules_id_seq 
-    RESTART WITH $least_unused_fare_rules_id
+    ALTER SEQUENCE {$table_prefix}_fare_rules_fare_rule_id_seq 
+    RESTART WITH $least_unused_fare_rule_id
     ";
 $result = db_query($restart_fare_rules_sequence);
 
