@@ -206,7 +206,46 @@ CREATE TABLE "public"."play_migrate_pattern_custom_shape_segments" (
 );
 CREATE UNIQUE INDEX ON "public"."play_migrate_pattern_custom_shape_segments" (pattern_id, from_stop_id, to_stop_id);
 
+
+CREATE TABLE "public"."migrate_calendar_dates" (
+    calendar_date_id SERIAL PRIMARY KEY,
+    "date" DATE NOT NULL DEFAULT '0001-01-01',
+    exception_type INTEGER DEFAULT 0,
+    agency_id INTEGER,
+    description TEXT,
+    last_modified TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE "public"."play_migrate_calendar_dates" (
+    calendar_date_id SERIAL PRIMARY KEY,
+    "date" DATE NOT NULL DEFAULT '0001-01-01',
+    exception_type INTEGER DEFAULT 0,
+    agency_id INTEGER,
+    description TEXT,
+    last_modified TIMESTAMPTZ DEFAULT now()
+);
  
+CREATE TABLE migrate_calendar_date_service_exceptions (
+    calendar_date_exception_id SERIAL PRIMARY KEY,
+    calendar_date_id integer NOT NULL,
+    exception_type integer,
+    service_exception integer NOT NULL,
+    agency_id integer NOT NULL,
+    last_modified timestamp without time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE play_migrate_calendar_date_service_exceptions (
+    calendar_date_exception_id SERIAL PRIMARY KEY,
+    calendar_date_id integer NOT NULL,
+    exception_type integer,
+    service_exception integer NOT NULL,
+    agency_id integer NOT NULL,
+    last_modified timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+
+
 ALTER TABLE "public"."migrate_agency" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_blocks" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_calendar" OWNER TO trillium_gtfs_web;
@@ -228,6 +267,13 @@ ALTER TABLE "public"."play_migrate_shape_segments" OWNER TO trillium_gtfs_web;
 
 ALTER TABLE "public"."migrate_pattern_custom_shape_segments" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."play_migrate_pattern_custom_shape_segments" OWNER TO trillium_gtfs_web;
+
+ALTER TABLE "public"."migrate_calendar_dates" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."play_migrate_calendar_dates" OWNER TO trillium_gtfs_web;
+
+ALTER TABLE "public"."migrate_calendar_date_service_exceptions" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."play_migrate_calendar_date_service_exceptions" OWNER TO trillium_gtfs_web;
+
 
 CREATE OR REPLACE FUNCTION ST_Lon ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
   SELECT ST_X( point :: geometry ); 
