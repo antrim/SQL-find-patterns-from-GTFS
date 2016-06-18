@@ -458,6 +458,17 @@ $restart_calendar_date_sequence = "
     ";
 $result = db_query($restart_calendar_date_sequence);
 
+$calendar_date_service_exceptions_query = "
+    INSERT INTO {$table_prefix}_calendar_date_service_exception
+        (calendar_date_id, exception_type, service_exception
+       , agency_id, last_modified) 
+    SELECT calendar_date_id, exception_type, service_exception
+         , agency_id, last_modified
+    FROM calendar_date_service_exception;
+  ";
+$result = db_query($calendar_date_service_exceptions_query);
+
+
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
 // 1. Gather distinct actual travel segments from schedules -- not sure of the 
 // best way to do this. Basically "From stop_id to (next) stop_id" denotes a 
