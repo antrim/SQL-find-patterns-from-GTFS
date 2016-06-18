@@ -444,6 +444,7 @@ $calendar_dates_query = "
          , agency_id, description, last_modified
     FROM calendar_dates;
   ";
+$result = db_query($calendar_dates_query);
 
 $get_least_unused_calendar_date_id = "
     SELECT 1 + MAX(calendar_date_id)
