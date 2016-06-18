@@ -495,14 +495,14 @@ $restart_fare_attributes_sequence = "
 $result = db_query($restart_fare_attributes_sequence);
 
 
-$migrate_fare_rider_catgories_query = "
-    INSERT INTO {$table_prefix}_fare_rider_catgories
+$migrate_fare_rider_categories_query = "
+    INSERT INTO {$table_prefix}_fare_rider_categories
         (fare_rider_category_id, fare_id, rider_category_custom_id 
        , price, agency_id) 
     SELECT fare_rider_category_id, fare_id, rider_category_custom_id 
          , price, agency_id
     FROM fare_rider_catgories;";
-$result = db_query($migrate_fare_rider_catgories_query);
+$result = db_query($migrate_fare_rider_categories_query);
 
 $get_least_unused_fare_rider_category_id = "
     SELECT 1 + MAX(fare_rider_category_id)
