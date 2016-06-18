@@ -461,7 +461,7 @@ $restart_calendar_date_sequence = "
 $result = db_query($restart_calendar_date_sequence);
 
 $calendar_date_service_exceptions_query = "
-    INSERT INTO {$table_prefix}_calendar_date_service_exception
+    INSERT INTO {$table_prefix}_calendar_date_service_exceptions
         (calendar_date_id, exception_type, service_exception
        , agency_id, last_modified) 
     SELECT calendar_date_id, exception_type, service_exception
