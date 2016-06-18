@@ -430,12 +430,32 @@ $migrate_shape_segments_query  = "
 $result = db_query($migrate_shape_segments_query);
 
 $remove_shape_segment_orphans_query = "
-    DELETE FROM play_migrate_shape_segments 
+    DELETE FROM {$table_prefix}_shape_segments 
     WHERE from_stop_id NOT IN (SELECT stop_id FROM play_migrate_stops) 
           OR to_stop_id NOT IN (SELECT stop_id FROM play_migrate_stops);
     ";
 $result = db_query($remove_shape_segment_orphans_query);
 
+$calendar_dates_query = "
+    INSERT INTO {$table_prefix}_calendar_dates
+        (calendar_date_id, \"date\", exception_type
+       , agency_id, description, last_modified) 
+    SELECT calendar_date_id, \"date\", exception_type
+         , agency_id, description, last_modified
+    FROM calendar_dates;
+  ";
+
+$get_least_unused_calendar_date_id = "
+    SELECT 1 + MAX(calendar_date_id)
+    FROM {$table_prefix}_calendar_dates";
+$result = db_query($get_least_unused_calendar_date_id);
+$least_unused_calendar_date_id = db_fetch_array($result)[0];
+echo "<br />\n least_unused_calendar_date_id $least_unused_calendar_date_id";
+$restart_calendar_date_sequence = "
+    ALTER SEQUENCE {$table_prefix}_calendar_dates_calendar_date_id_seq 
+    RESTART WITH $least_unused_calendar_date_id
+    ";
+$result = db_query($restart_calendar_date_sequence);
 
 // PROPOSED PROCESS FOR MIGRATING SEGMENTS
 // 1. Gather distinct actual travel segments from schedules -- not sure of the 
