@@ -355,6 +355,8 @@ CREATE TABLE migrate_fare_rules (
     destination_id integer,
     contains_id integer,
     agency_id integer DEFAULT 0,
+    combinable Boolean DEFAULT true NOT NULL,
+    reversible Boolean DEFAULT true NOT NULL,
     last_modified timestamp without time zone DEFAULT now() NOT NULL,
     fare_id_import character(35) DEFAULT NULL::bpchar,
     route_id_import character(35) DEFAULT NULL::bpchar,
