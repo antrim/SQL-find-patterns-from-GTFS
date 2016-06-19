@@ -31,6 +31,8 @@ $$ LANGUAGE SQL IMMUTABLE;
 
 
 
+
+
 CREATE TABLE "public"."migrate_agencies" ( 
 	"agency_id" Serial NOT NULL,
 	"feed_id" SmallInt,
@@ -143,7 +145,7 @@ CREATE TABLE "public"."migrate_schedules" (
 	"parent_station" Integer,  -- NOT NULL,
 	"stop_desc" Character Varying( 2044 ), -- NOT NULL,
 	"stop_comments" Character Varying( 2044 ) NOT NULL,
-	"location" "public"."GEOGRAPHY",
+	"location" "public".GEOGRAPHY,
 	"zone_id" Integer, --  NOT NULL,
 	"platform_code" Character Varying( 2044 ), -- NOT NULL,
 	"city" Character Varying( 2044 ), --  NOT NULL,
@@ -202,7 +204,7 @@ CREATE TABLE "public"."migrate_feeds" (
     contact_url character varying(2044),
     license character varying(2044) ,
     id SERIAL NOT NULL,
-    last_modified Timestamp Without Time Zone; 
+    last_modified Timestamp Without Time Zone
 );
 
 CREATE TABLE "public"."migrate_shape_segments" (
@@ -243,7 +245,6 @@ CREATE UNIQUE INDEX ON "public"."play_migrate_pattern_custom_shape_segments" (pa
 CREATE TABLE "public"."migrate_calendar_dates" (
     calendar_date_id SERIAL PRIMARY KEY,
     "date" DATE NOT NULL DEFAULT '0001-01-01',
-    exception_type INTEGER DEFAULT 0,
     agency_id INTEGER,
     description TEXT,
     last_modified TIMESTAMPTZ DEFAULT now()
@@ -252,7 +253,6 @@ CREATE TABLE "public"."migrate_calendar_dates" (
 CREATE TABLE "public"."play_migrate_calendar_dates" (
     calendar_date_id SERIAL PRIMARY KEY,
     "date" DATE NOT NULL DEFAULT '0001-01-01',
-    exception_type INTEGER DEFAULT 0,
     agency_id INTEGER,
     description TEXT,
     last_modified TIMESTAMPTZ DEFAULT now()
@@ -262,7 +262,14 @@ CREATE TABLE migrate_calendar_date_service_exceptions (
     calendar_date_exception_id SERIAL PRIMARY KEY,
     calendar_date_id integer NOT NULL,
     exception_type integer,
-    service_exception integer NOT NULL,
+    calendar_id integer NOT NULL,
+	"monday" Boolean DEFAULT false NOT NULL,
+	"tuesday" Boolean DEFAULT false NOT NULL,
+	"wednesday" Boolean DEFAULT false NOT NULL,
+	"thursday" Boolean DEFAULT false NOT NULL,
+	"friday" Boolean DEFAULT false NOT NULL,
+	"saturday" Boolean DEFAULT false NOT NULL,
+	"sunday" Boolean DEFAULT false NOT NULL,
     agency_id integer NOT NULL,
     last_modified timestamp without time zone DEFAULT now() NOT NULL
 );
@@ -271,7 +278,14 @@ CREATE TABLE play_migrate_calendar_date_service_exceptions (
     calendar_date_exception_id SERIAL PRIMARY KEY,
     calendar_date_id integer NOT NULL,
     exception_type integer,
-    service_exception integer NOT NULL,
+    calendar_id integer NOT NULL,
+	"monday" Boolean DEFAULT false NOT NULL,
+	"tuesday" Boolean DEFAULT false NOT NULL,
+	"wednesday" Boolean DEFAULT false NOT NULL,
+	"thursday" Boolean DEFAULT false NOT NULL,
+	"friday" Boolean DEFAULT false NOT NULL,
+	"saturday" Boolean DEFAULT false NOT NULL,
+	"sunday" Boolean DEFAULT false NOT NULL,
     agency_id integer NOT NULL,
     last_modified timestamp without time zone DEFAULT now() NOT NULL
 );
@@ -279,9 +293,9 @@ CREATE TABLE play_migrate_calendar_date_service_exceptions (
 
 
 
-ALTER TABLE "public"."migrate_agency" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_agencies" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_blocks" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_calendar" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_calendars" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_calendar_bounds" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_directions" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_headsigns" OWNER TO trillium_gtfs_web;
@@ -293,7 +307,7 @@ ALTER TABLE "public"."migrate_stops" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_timed_patterns" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_timed_pattern_stops" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."migrate_timed_pattern_stops_nonnormalized" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_feed" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_feeds" OWNER TO trillium_gtfs_web;
 
 ALTER TABLE "public"."migrate_shape_segments" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."play_migrate_shape_segments" OWNER TO trillium_gtfs_web;
@@ -306,6 +320,3 @@ ALTER TABLE "public"."play_migrate_calendar_dates" OWNER TO trillium_gtfs_web;
 
 ALTER TABLE "public"."migrate_calendar_date_service_exceptions" OWNER TO trillium_gtfs_web;
 ALTER TABLE "public"."play_migrate_calendar_date_service_exceptions" OWNER TO trillium_gtfs_web;
-
-
-

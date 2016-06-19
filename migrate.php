@@ -8,7 +8,7 @@ require_once './includes/config.inc.php';
 $live = false;
 set_time_limit(7200);
 
-$table_prefix = "play_migrate";
+$table_prefix = "migrate";
 $agency_array = array (1, 3, 175, 267, 392);
 
 $agency_string = implode(",", $agency_array);
@@ -436,17 +436,15 @@ $result = db_query($migrate_shape_segments_query);
 
 $remove_shape_segment_orphans_query = "
     DELETE FROM {$table_prefix}_shape_segments 
-    WHERE from_stop_id NOT IN (SELECT stop_id FROM play_migrate_stops) 
-          OR to_stop_id NOT IN (SELECT stop_id FROM play_migrate_stops);
+    WHERE from_stop_id NOT IN (SELECT stop_id FROM {$table_prefix}_stops) 
+          OR to_stop_id NOT IN (SELECT stop_id FROM {$table_prefix}_stops);
     ";
 $result = db_query($remove_shape_segment_orphans_query);
 
 $calendar_dates_query = "
     INSERT INTO {$table_prefix}_calendar_dates
-        (calendar_date_id, \"date\", exception_type
-       , agency_id, description, last_modified) 
-    SELECT calendar_date_id, \"date\", exception_type
-         , agency_id, description, last_modified
+        (calendar_date_id, \"date\", agency_id, description, last_modified) 
+    SELECT calendar_date_id, \"date\", agency_id, description, last_modified
     FROM calendar_dates;
   ";
 $result = db_query($calendar_dates_query);
@@ -465,11 +463,10 @@ $result = db_query($restart_calendar_date_sequence);
 
 $calendar_date_service_exceptions_query = "
     INSERT INTO {$table_prefix}_calendar_date_service_exceptions
-        (calendar_date_id, exception_type, service_exception
-       , agency_id, last_modified) 
-    SELECT calendar_date_id, exception_type, service_exception
-         , agency_id, last_modified
-    FROM calendar_date_service_exceptions;
+        (calendar_date_id, exception_type, calendar_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, agency_id, last_modified) 
+    SELECT calendar_date_id, exception_type, service_exception as calendar_id, monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
+            , friday::boolean, saturday::boolean, sunday::boolean, calendar_date_service_exceptions.agency_id, calendar_date_service_exceptions.last_modified
+    FROM calendar_date_service_exceptions inner join calendar on calendar_date_service_exceptions.service_exception = calendar.calendar_id;
   ";
 $result = db_query($calendar_date_service_exceptions_query);
 
