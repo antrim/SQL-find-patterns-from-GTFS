@@ -249,9 +249,11 @@ $migrate_pattern_query  = "
 $result = db_query($migrate_pattern_query);
 
 // continuing with patterns.sql
-// ALERT! Some patterns are on multiple routes. I need to figure out how to handle this. <-- come back here and play -- test results
+// ALERT! Some patterns are on multiple routes. I need to figure out how to 
+// handle this. <-- come back here and play -- test results
 
-// SELECT count(distinct agency_id), pattern_id, count(distinct route_id) as route_count, count(distinct direction_id) as direction_count
+// SELECT count(distinct agency_id), pattern_id, count(distinct route_id) as 
+// route_count, count(distinct direction_id) as direction_count
 // FROM {$table_prefix}_timed_pattern_stops_nonnormalized
 // group by pattern_id
 // ORDER BY route_count DESC, direction_count DESC
@@ -262,10 +264,14 @@ $result = db_query($migrate_pattern_query);
 $migrate_headsigns_query  = "
     INSERT into {$table_prefix}_headsigns (agency_id, headsign_id, headsign)
     SELECT DISTINCT  agency_id, trip_headsign_id as headsign_id, trip_headsign AS headsign
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized where trip_headsign_id IS NOT NULL AND trip_headsign IS NOT NULL
+    FROM {$table_prefix}_timed_pattern_stops_nonnormalized 
+    WHERE trip_headsign_id IS NOT NULL 
+          AND trip_headsign IS NOT NULL
     UNION
     SELECT DISTINCT  agency_id, stop_headsign_id as headsign_id, stop_headsign AS headsign
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized where stop_headsign_id IS NOT NULL AND stop_headsign IS NOT NULL
+    FROM {$table_prefix}_timed_pattern_stops_nonnormalized 
+    WHERE stop_headsign_id IS NOT NULL 
+          AND stop_headsign IS NOT NULL
     ORDER BY agency_id, headsign_id";
 $result = db_query($migrate_headsigns_query);
 
@@ -463,10 +469,19 @@ $result = db_query($restart_calendar_date_sequence);
 
 $calendar_date_service_exceptions_query = "
     INSERT INTO {$table_prefix}_calendar_date_service_exceptions
-        (calendar_date_id, exception_type, calendar_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, agency_id, last_modified) 
-    SELECT calendar_date_id, exception_type, service_exception as calendar_id, monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
-            , friday::boolean, saturday::boolean, sunday::boolean, calendar_date_service_exceptions.agency_id, calendar_date_service_exceptions.last_modified
-    FROM calendar_date_service_exceptions inner join calendar on calendar_date_service_exceptions.service_exception = calendar.calendar_id;
+        (calendar_date_id, exception_type, calendar_id
+       , monday, tuesday , wednesday
+       , thursday, friday, saturday, sunday
+       , agency_id
+       , last_modified) 
+   SELECT calendar_date_id, exception_type, service_exception as calendar_id
+        , monday::boolean, tuesday::boolean, wednesday::boolean
+        , thursday::boolean, friday::boolean, saturday::boolean, sunday::boolean
+        , calendar_date_service_exceptions.agency_id
+        , calendar_date_service_exceptions.last_modified
+    FROM calendar_date_service_exceptions 
+    INNER JOIN calendar
+            ON calendar_date_service_exceptions.service_exception = calendar.calendar_id;
   ";
 $result = db_query($calendar_date_service_exceptions_query);
 
