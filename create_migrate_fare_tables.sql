@@ -323,7 +323,8 @@ CREATE TABLE migrate_fare_rider_categories (
 ALTER TABLE migrate_fare_rider_categories OWNER TO trillium_gtfs_group;
 
 --
--- Name: migrate_fare_rider_categories_fare_rider_category_id_seq; Type: SEQUENCE; Schema: public; Owner: trillium_gtfs_group
+-- Name: migrate_fare_rider_categories_fare_rider_category_id_seq; Type:
+-- SEQUENCE; Schema: public; Owner: trillium_gtfs_group
 --
 
 CREATE SEQUENCE migrate_fare_rider_categories_fare_rider_category_id_seq
@@ -337,10 +338,12 @@ CREATE SEQUENCE migrate_fare_rider_categories_fare_rider_category_id_seq
 ALTER TABLE migrate_fare_rider_categories_fare_rider_category_id_seq OWNER TO trillium_gtfs_group;
 
 --
--- Name: migrate_fare_rider_categories_fare_rider_category_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: trillium_gtfs_group
+-- Name: migrate_fare_rider_categories_fare_rider_category_id_seq; Type:
+-- SEQUENCE OWNED BY; Schema: public; Owner: trillium_gtfs_group
 --
 
-ALTER SEQUENCE migrate_fare_rider_categories_fare_rider_category_id_seq OWNED BY migrate_fare_rider_categories.fare_rider_category_id;
+ALTER SEQUENCE migrate_fare_rider_categories_fare_rider_category_id_seq 
+      OWNED BY migrate_fare_rider_categories.fare_rider_category_id;
 
 
 --
@@ -393,25 +396,29 @@ ALTER SEQUENCE migrate_fare_rules_fare_rule_id_seq OWNED BY migrate_fare_rules.f
 -- Name: fare_id; Type: DEFAULT; Schema: public; Owner: trillium_gtfs_group
 --
 
-ALTER TABLE ONLY migrate_fare_attributes ALTER COLUMN fare_id SET DEFAULT nextval('migrate_fare_attributes_fare_id_seq'::regclass);
+ALTER TABLE ONLY migrate_fare_attributes ALTER COLUMN fare_id 
+      SET DEFAULT nextval('migrate_fare_attributes_fare_id_seq'::regclass);
 
 
 --
 -- Name: fare_rider_category_id; Type: DEFAULT; Schema: public; Owner: trillium_gtfs_group
 --
 
-ALTER TABLE ONLY migrate_fare_rider_categories ALTER COLUMN fare_rider_category_id SET DEFAULT nextval('migrate_fare_rider_categories_fare_rider_category_id_seq'::regclass);
+ALTER TABLE ONLY migrate_fare_rider_categories ALTER COLUMN fare_rider_category_id 
+      SET DEFAULT nextval('migrate_fare_rider_categories_fare_rider_category_id_seq'::regclass);
 
 
 --
 -- Name: fare_rule_id; Type: DEFAULT; Schema: public; Owner: trillium_gtfs_group
 --
 
-ALTER TABLE ONLY migrate_fare_rules ALTER COLUMN fare_rule_id SET DEFAULT nextval('migrate_fare_rules_fare_rule_id_seq'::regclass);
+ALTER TABLE ONLY migrate_fare_rules ALTER COLUMN fare_rule_id 
+      SET DEFAULT nextval('migrate_fare_rules_fare_rule_id_seq'::regclass);
 
 
 --
--- Name: migrate_fare_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: trillium_gtfs_group
+-- Name: migrate_fare_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner:
+-- trillium_gtfs_group
 --
 
 ALTER TABLE ONLY migrate_fare_attributes
@@ -419,7 +426,8 @@ ALTER TABLE ONLY migrate_fare_attributes
 
 
 --
--- Name: migrate_fare_rider_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: trillium_gtfs_group
+-- Name: migrate_fare_rider_categories_pkey; Type: CONSTRAINT; Schema: public;
+-- Owner: trillium_gtfs_group
 --
 
 ALTER TABLE ONLY migrate_fare_rider_categories
@@ -464,7 +472,8 @@ GRANT SELECT ON TABLE migrate_fare_rider_categories TO trillium_gtfs_web_read;
 
 
 --
--- Name: migrate_fare_rider_categories_fare_rider_category_id_seq; Type: ACL; Schema: public; Owner: trillium_gtfs_group
+-- Name: migrate_fare_rider_categories_fare_rider_category_id_seq; Type: ACL;
+-- Schema: public; Owner: trillium_gtfs_group
 --
 
 REVOKE ALL ON SEQUENCE migrate_fare_rider_categories_fare_rider_category_id_seq FROM PUBLIC;
