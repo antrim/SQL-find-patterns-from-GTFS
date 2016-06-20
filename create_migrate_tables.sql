@@ -393,7 +393,7 @@ CREATE INDEX ON "public"."migrate_shape_segments" (to_stop_id);
 CREATE TABLE "public"."play_migrate_shape_segments" (
     from_stop_id integer NOT NULL,
     to_stop_id   integer NOT NULL,
-    geog GEOGRAPHY NOT NULL,  -- line string.
+    geog GEOGRAPHY,  -- line string.
     last_modified timestamptz DEFAULT NOW()
 );
 CREATE UNIQUE INDEX ON "public"."play_migrate_shape_segments" (from_stop_id, to_stop_id);
