@@ -172,6 +172,33 @@ CREATE TABLE "public"."migrate_schedules" (
 	"departure_time" Interval,
 	"headsign_id" Bigint );
  
+
+ CREATE TABLE "public"."play_migrate_timed_pattern_stops_nonnormalized" ( 
+	"agency_id" SmallInt NOT NULL,
+	"agency_name" Character Varying( 2044 ) NOT NULL,
+	"route_short_name" Character Varying( 2044 ) NOT NULL,
+	"route_long_name" Character Varying( 2044 ) NOT NULL,
+	"direction_label" Character Varying( 2044 ) NOT NULL,
+	"direction_id" Bigint,
+	"trip_headsign_id" SmallInt,
+	"trip_headsign" Character Varying( 2044 ),
+	"stop_id" Bigint,
+	"stop_order" SmallInt NOT NULL,
+	"timed_pattern_id" Bigint NOT NULL,
+	"pattern_id" Bigint NOT NULL,
+	"pickup_type" SmallInt NOT NULL,
+	"drop_off_type" SmallInt NOT NULL,
+	"one_trip" Bigint,
+	"trips_list" Character Varying( 5000 ),
+	"stops_pattern" Character Varying( 5000 ) NOT NULL,
+	"arrival_time_intervals" Character Varying( 5000 ) NOT NULL,
+	"departure_time_intervals" Character Varying( 5000 ) NOT NULL,
+	"route_id" Bigint,
+	"arrival_time" Interval,
+	"departure_time" Interval,
+	"stop_headsign" Character Varying( 2044 ),
+	"stop_headsign_id" Bigint );
+
  CREATE TABLE "public"."migrate_timed_pattern_stops_nonnormalized" ( 
 	"agency_id" SmallInt NOT NULL,
 	"agency_name" Character Varying( 2044 ) NOT NULL,
@@ -180,7 +207,7 @@ CREATE TABLE "public"."migrate_schedules" (
 	"direction_label" Character Varying( 2044 ) NOT NULL,
 	"direction_id" Bigint,
 	"trip_headsign_id" SmallInt,
-	"trip_headsign" Character Varying( 2044 ) NOT NULL,
+	"trip_headsign" Character Varying( 2044 ),
 	"stop_id" Bigint,
 	"stop_order" SmallInt NOT NULL,
 	"timed_pattern_id" Bigint NOT NULL,
@@ -206,6 +233,17 @@ CREATE TABLE "public"."migrate_feeds" (
     id SERIAL NOT NULL,
     last_modified Timestamp Without Time Zone
 );
+
+CREATE TABLE "public"."play_migrate_feeds" (
+    feed_name character varying(2044) NOT NULL,
+    contact_email character varying(2044) ,
+    contact_url character varying(2044),
+    license character varying(2044) ,
+    id SERIAL NOT NULL,
+    last_modified Timestamp Without Time Zone
+);
+
+
 
 CREATE TABLE "public"."migrate_shape_segments" (
     from_stop_id integer NOT NULL,
@@ -293,30 +331,59 @@ CREATE TABLE play_migrate_calendar_date_service_exceptions (
 
 
 
-ALTER TABLE "public"."migrate_agencies" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_blocks" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_calendars" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_calendar_bounds" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_directions" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_headsigns" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_patterns" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_pattern_stops" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_routes" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_schedules" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_stops" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_timed_patterns" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_timed_pattern_stops" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_timed_pattern_stops_nonnormalized" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."migrate_feeds" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_agencies" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_agencies" OWNER TO trillium_gtfs_group;
 
-ALTER TABLE "public"."migrate_shape_segments" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."play_migrate_shape_segments" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_blocks" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_blocks" OWNER TO trillium_gtfs_group;
 
-ALTER TABLE "public"."migrate_pattern_custom_shape_segments" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."play_migrate_pattern_custom_shape_segments" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_calendars" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_calendars" OWNER TO trillium_gtfs_group;
 
-ALTER TABLE "public"."migrate_calendar_dates" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."play_migrate_calendar_dates" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_calendar_bounds" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_calendar_bounds" OWNER TO trillium_gtfs_group;
 
-ALTER TABLE "public"."migrate_calendar_date_service_exceptions" OWNER TO trillium_gtfs_web;
-ALTER TABLE "public"."play_migrate_calendar_date_service_exceptions" OWNER TO trillium_gtfs_web;
+ALTER TABLE "public"."migrate_directions" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_directions" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_headsigns" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_headsigns" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_patterns" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_patterns" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_pattern_stops" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_pattern_stops" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_routes" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_routes" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_schedules" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_schedules" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_stops" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_stops" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_timed_patterns" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_timed_patterns" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_timed_pattern_stops" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_timed_pattern_stops" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_timed_pattern_stops_nonnormalized" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_timed_pattern_stops_nonnormalized" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_feeds" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_feeds" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_shape_segments" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_shape_segments" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_pattern_custom_shape_segments" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_pattern_custom_shape_segments" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_calendar_dates" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_calendar_dates" OWNER TO trillium_gtfs_group;
+
+ALTER TABLE "public"."migrate_calendar_date_service_exceptions" OWNER TO trillium_gtfs_group;
+ALTER TABLE "public"."play_migrate_calendar_date_service_exceptions" OWNER TO trillium_gtfs_group;
