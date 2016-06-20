@@ -8,7 +8,8 @@ require_once './includes/config.inc.php';
 $live = false;
 set_time_limit(7200);
 
-$table_prefix = "migrate";
+# $table_prefix = "migrate";
+$table_prefix = "play_migrate";
 $agency_array = array (1, 3, 175, 267, 392);
 
 $agency_string = implode(",", $agency_array);
