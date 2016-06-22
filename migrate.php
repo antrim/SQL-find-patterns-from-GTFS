@@ -14,7 +14,12 @@ $table_prefix = "play_migrate";
 
 # $agency_array = array (1, 3, 175, 267, 392);
 #
-# fetch agency list dynamically, make sure to include 1, 3, 175, 267, and 392
+# Fetch agency list dynamically, make sure to include 1, 3, 175, 267, and 392.
+#
+# Feel free to modify the LIMIT statement during testing:
+#   Larger values to diagnose problems uncovered by larger collections of agencies.
+#   Smaller values for quicker turnaround to debug the migration script itself.
+#
 $agency_string_query = "
     SELECT string_agg(agency_id::text, ', ' ORDER BY agency_id) AS agency_string
     FROM (      SELECT   1 as agency_id
