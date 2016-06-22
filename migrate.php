@@ -29,7 +29,8 @@ $agency_string_query = "
           UNION SELECT 392 as agency_id
           UNION SELECT agency_id 
                 FROM agency
-                WHERE agency_name NOT LIKE '%DEPRECATED%' LIMIT 40) a;";
+                WHERE agency_name NOT LIKE '%DEPRECATED%' 
+                LIMIT 40) foo;";
     
 $result = db_query($agency_string_query);
 $agency_string = db_fetch_array($result)[0];
