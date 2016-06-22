@@ -56,7 +56,7 @@ $agency_string_query = "
           SELECT agency_id FROM agency
           WHERE agency_name NOT LIKE '%DEPRECATED%' LIMIT 20);";
     
-$result = db_query($get_least_unused_fare_rule_id);
+$result = db_query($agency_string_query);
 $agency_string = db_fetch_array($result)[0];
 
 // So apparently trillium_gtfs_web will never be able to run truncate on the 
