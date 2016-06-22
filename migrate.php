@@ -22,15 +22,16 @@ $table_prefix = "play_migrate";
 #
 $agency_string_query = "
     SELECT string_agg(agency_id::text, ', ' ORDER BY agency_id) AS agency_string
-    FROM (      SELECT   1 as agency_id
-          UNION SELECT   3 as agency_id
-          UNION SELECT 175 as agency_id
-          UNION SELECT 267 as agency_id
-          UNION SELECT 392 as agency_id
+    FROM (      SELECT   1 AS agency_id
+          UNION SELECT   3 AS agency_id
+          UNION SELECT 175 AS agency_id
+          UNION SELECT 267 AS agency_id
+          UNION SELECT 392 AS agency_id
           UNION SELECT agency_id 
                 FROM agency
                 WHERE agency_name NOT LIKE '%DEPRECATED%' 
-                LIMIT 40) foo;";
+                ORDER BY agency_id
+                LIMIT 80) foo;";
     
 $result = db_query($agency_string_query);
 $agency_string = db_fetch_array($result)[0];
