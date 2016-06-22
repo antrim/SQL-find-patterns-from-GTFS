@@ -59,6 +59,8 @@ $agency_string_query = "
 $result = db_query($agency_string_query);
 $agency_string = db_fetch_array($result)[0];
 
+echo "<br />\n agency_string $agency_string";
+
 // So apparently trillium_gtfs_web will never be able to run truncate on the 
 // table created by aaron_super with an autoincrement counter
 // http://dba.stackexchange.com/questions/58282/error-must-be-owner-of-relation-user-account-id-seq
