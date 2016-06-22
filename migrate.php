@@ -20,6 +20,7 @@ $table_prefix = "play_migrate";
 #   Larger values to diagnose problems uncovered by larger collections of agencies.
 #   Smaller values for quicker turnaround to debug the migration script itself.
 #
+$how_many_agencies_to_test = "80";
 $agency_string_query = "
     SELECT string_agg(agency_id::text, ', ' ORDER BY agency_id) AS agency_string
     FROM (      SELECT   1 AS agency_id
@@ -31,7 +32,7 @@ $agency_string_query = "
                 FROM agency
                 WHERE agency_name NOT LIKE '%DEPRECATED%' 
                 ORDER BY agency_id
-                LIMIT 80) foo;";
+                LIMIT {$how_many_agencies_to_test}) foo;";
     
 $result = db_query($agency_string_query);
 $agency_string = db_fetch_array($result)[0];
