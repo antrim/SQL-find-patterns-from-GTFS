@@ -18,7 +18,6 @@ $table_prefix = "play_migrate";
     SELECT string_agg(agency_id::text, ', ' ORDER BY agency_id) 
     FROM agency 
     WHERE agency_name NOT LIKE '%DEPRECATED%' ;
- */
 $agency_array = array (
     1, 2, 3, 4, 5, 6, 7, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 31, 32, 
     33, 34, 36, 37, 38, 42, 43, 44, 45, 46, 47, 48, 49, 50, 52, 53, 54, 55, 56, 
@@ -38,8 +37,27 @@ $agency_array = array (
     477, 478, 480, 481, 483, 484, 493, 495, 500, 501, 502, 504, 506, 508, 509, 
     510, 511, 512, 513, 521, 522, 523, 526, 531, 533, 535, 536, 537, 539, 540, 
     541, 543, 551, 553, 554);
-
 $agency_string = implode(",", $agency_array);
+ */
+
+# fetch agency list dynamically, make sure to include 1, 3, 175, 267, and 392
+$agency_string_query = "
+    SELECT string_agg(agency_id::text, ', ' ORDER BY agency_id) AS agency_string
+    FROM (SELECT 1 as agency_id
+          UNION
+          SELECT 3 as agency_id
+          UNION
+          SELECT 175 as agency_id
+          UNION
+          SELECT 267 as agency_id
+          UNION
+          SELECT 392 as agency_id
+          UNION
+          SELECT agency_id FROM agency
+          WHERE agency_name NOT LIKE '%DEPRECATED%' LIMIT 20);
+    
+$result = db_query($get_least_unused_fare_rule_id);
+$agency_string = db_fetch_array($result)[0];
 
 // So apparently trillium_gtfs_web will never be able to run truncate on the 
 // table created by aaron_super with an autoincrement counter
