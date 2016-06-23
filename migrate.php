@@ -381,8 +381,6 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
             , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
             , friday::boolean, saturday::boolean, sunday::boolean 
        FROM trips 
-       -- INNER JOIN views.stop_times_first_stops AS stop_times_first_stops
-       --   ON trips.trip_id = stop_times_first_stops.trip_id 
        INNER JOIN calendar 
           ON trips.service_id = calendar.calendar_id 
        WHERE trips.trip_id IN ({$trips_list}) 
