@@ -32,7 +32,11 @@ $agency_string_query = "
                 FROM agency
                 WHERE agency_name NOT LIKE '%DEPRECATED%' 
                 ORDER BY agency_id
-                LIMIT {$how_many_agencies_to_test}) foo;";
+                LIMIT {$how_many_agencies_to_test}) foo
+    -- avoiding these agency ids for now:
+    -- https://github.com/trilliumtransit/migrate-GTFS/issues/3#issuecomment-228157323 
+    -- they have missing arrival_times for first stops in some trips.
+    AND agency_id NOT IN (41,236,440,61,460,23,241)";
     
 $result = db_query($agency_string_query);
 $agency_string = db_fetch_array($result)[0];
