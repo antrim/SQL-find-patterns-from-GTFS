@@ -36,7 +36,7 @@ $agency_string_query = "
     -- avoiding these agency ids for now:
     -- https://github.com/trilliumtransit/migrate-GTFS/issues/3#issuecomment-228157323 
     -- they have missing arrival_times for first stops in some trips.
-    AND agency_id NOT IN (41,236,440,61,460,23,241)";
+    WHERE agency_id NOT IN (41,236,440,61,460,23,241)";
     
 $result = db_query($agency_string_query);
 $agency_string = db_fetch_array($result)[0];
