@@ -46,30 +46,30 @@ echo "<br />\n agency_string $agency_string";
 // ED. Addressed via changing owner of sequence, for example:
 // ALTER SEQUENCE play_migrate_blocks_block_id_seq OWNER TO trillium_gtfs_group ;
 
-$truncate_migrate_tables_query = "TRUNCATE 
-  , {$table_prefix}_agencies
-  , {$table_prefix}_pattern_stops
-    {$table_prefix}_timed_pattern_stops_nonnormalized
-  , {$table_prefix}_timed_pattern_stops
-  , {$table_prefix}_timed_patterns
-  , {$table_prefix}_routes
-  , {$table_prefix}_patterns
-  , {$table_prefix}_headsigns
-  , {$table_prefix}_directions
-  , {$table_prefix}_schedules
-  , {$table_prefix}_calendars
-  , {$table_prefix}_calendar_bounds
-  , {$table_prefix}_stops
-  , {$table_prefix}_blocks
-  , {$table_prefix}_feeds
-  , {$table_prefix}_shape_segments
-  , {$table_prefix}_pattern_custom_shape_segments
-  , {$table_prefix}_calendar_dates
-  , {$table_prefix}_calendar_date_service_exceptions
-  , {$table_prefix}_fare_attributes
-  , {$table_prefix}_fare_rider_categories
-  , {$table_prefix}_fare_rules
-    RESTART IDENTITY;";
+$truncate_migrate_tables_query = "
+    TRUNCATE {$table_prefix}_agencies
+           , {$table_prefix}_pattern_stops
+           , {$table_prefix}_timed_pattern_stops_nonnormalized
+           , {$table_prefix}_timed_pattern_stops
+           , {$table_prefix}_timed_patterns
+           , {$table_prefix}_routes
+           , {$table_prefix}_patterns
+           , {$table_prefix}_headsigns
+           , {$table_prefix}_directions
+           , {$table_prefix}_schedules
+           , {$table_prefix}_calendars
+           , {$table_prefix}_calendar_bounds
+           , {$table_prefix}_stops
+           , {$table_prefix}_blocks
+           , {$table_prefix}_feeds
+           , {$table_prefix}_shape_segments
+           , {$table_prefix}_pattern_custom_shape_segments
+           , {$table_prefix}_calendar_dates
+           , {$table_prefix}_calendar_date_service_exceptions
+           , {$table_prefix}_fare_attributes
+           , {$table_prefix}_fare_rider_categories
+           , {$table_prefix}_fare_rules
+             RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
 
