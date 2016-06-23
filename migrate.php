@@ -47,9 +47,9 @@ echo "<br />\n agency_string $agency_string";
 // ALTER SEQUENCE play_migrate_blocks_block_id_seq OWNER TO trillium_gtfs_group ;
 
 $truncate_migrate_tables_query = "TRUNCATE 
-    {$table_prefix}_timed_pattern_stops_nonnormalized
   , {$table_prefix}_agencies
   , {$table_prefix}_pattern_stops
+    {$table_prefix}_timed_pattern_stops_nonnormalized
   , {$table_prefix}_timed_pattern_stops
   , {$table_prefix}_timed_patterns
   , {$table_prefix}_routes
@@ -176,7 +176,8 @@ SELECT timed_patterns.agency_id, agency.agency_name, routes.route_short_name
            THEN (stop_times.departure_time - min_departure_time) 
            ELSE NULL
        END as departure_time
-     , pickup_type, drop_off_type
+     , COALESCE(pickup_type,0)
+     , COALESCE(drop_off_type, 0)
      , one_trip, trips_list, stop_patterns.stops_pattern, arrival_time_intervals
      , departure_time_intervals, trips.route_id, stop_times.headsign_id as stop_headsign_id 
 FROM timed_patterns
