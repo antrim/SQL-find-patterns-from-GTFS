@@ -390,7 +390,7 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
                              WHERE trips.trip_id = frequencies.trip_id) 
              AND based_on IS NULL 
              AND trips.service_id IS NOT NULL 
-       GROUP BY trips.agency_id, timed_pattern_id, calendar_id, end_time
+       GROUP BY trips.agency_id, timed_pattern_id, calendar_id, start_time, end_time
               , headway, block_id, monday, tuesday, wednesday, thursday
               , friday, saturday, sunday
    UNION
