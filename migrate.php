@@ -229,6 +229,7 @@ $migrate_feeds_query  = "
             ON agency_group_assoc.agency_group_id = agency_groups.agency_group_id 
     WHERE agency_group_assoc.agency_id IN ($agency_string)";
 $migrate_feeds_result = db_query($migrate_feeds_query);
+
 echo "<br />\n" . "\n\n".$migrate_feeds_query."\n\n";
 
 // pattern_stop.sql
@@ -394,6 +395,8 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
                              WHERE trips.trip_id = frequencies.trip_id) 
              AND based_on IS NULL 
              AND trips.service_id IS NOT NULL 
+             -- Ed: only import trips whose first arrival_time is not null. 2016-06-24
+             AND views.first_arrival_time_for_trip(trips.trip_id) IS NOT NULL 
        GROUP BY trips.agency_id, timed_pattern_id, calendar_id
               -- , stop_times_first_stops.arrival_time
               , trips.trip_id, end_time
@@ -588,7 +591,20 @@ $restart_fare_rules_sequence = "
 $result = db_query($restart_fare_rules_sequence);
 
 
-
+# TODO, either:
+# (1) This UPDATE should be automatically re-run via trigger, whenever 
+#     {$table_prefix}_fare_rules is modified. 
+# (2) Or, we should remove the is_symmetric column and instead use 
+#     views.{$table_prefix)_fare_rules_(symmetric|asymmetric)
+$fare_rules_symmetric_query = "
+    UPDATE {$table_prefix}_fare_rules
+    SET is_symmetric = CASE 
+            WHEN fare_rule_id IN 
+                 (SELECT fare_rule_id FROM views.{$table_prefix}_fare_rules_asymmetric)
+            THEN False
+            ELSE True END CASE;
+";
+$result = db_query($fare_rules_symmetric_query);
 
 echo "<br / >\n" . "Migration successful."
 
