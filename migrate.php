@@ -602,7 +602,7 @@ $fare_rules_symmetric_query = "
             WHEN fare_rule_id IN 
                  (SELECT fare_rule_id FROM views.{$table_prefix}_fare_rules_asymmetric)
             THEN False
-            ELSE True END CASE;
+            ELSE True END;
 ";
 $result = db_query($fare_rules_symmetric_query);
 
