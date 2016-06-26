@@ -394,7 +394,7 @@ $migrate_stops_query  = "
          , s.city, direction_id, stop_url, publish_status, stop_timezone
     FROM stops s
     LEFT JOIN zones z USING (zone_id)
-    WHERE agency_id IN ($agency_string);";
+    WHERE s.agency_id IN ($agency_string);";
 $result = db_query($migrate_stops_query);
 
 $patterns_nonnormalized_query = "
