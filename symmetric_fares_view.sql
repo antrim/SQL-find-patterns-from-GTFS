@@ -143,3 +143,110 @@ ALTER VIEW views.play_migrate_fare_rules_asymmetric OWNER TO trillium_gtfs_group
 --  from play_migrate_fare_rules. Ed 2016-06-23.
 
 
+
+
+
+---------------------
+--- migrate_* version of the views, below.
+-----------
+
+CREATE OR REPLACE VIEW views.migrate_fare_rules_symmetric AS
+SELECT DISTINCT fr1.fare_id
+     , fr1.origin_id AS zone_id_a
+     , fr1.destination_id AS zone_id_b
+     , fr1.route_id 
+     , fr1.contains_id
+FROM migrate_fare_rules fr1
+JOIN migrate_fare_rules fr2
+    ON fr1.fare_id = fr2.fare_id
+    AND fr1.origin_id = fr2.destination_id
+    AND fr1.destination_id = fr2.origin_id
+    AND (fr1.route_id = fr2.route_id 
+         OR (fr1.route_id IS NULL AND fr2.route_id IS NULL))
+    AND (fr1.contains_id = fr2.contains_id 
+         OR (fr1.contains_id IS NULL AND fr2.contains_id IS NULL))
+WHERE fr1.origin_id < fr1.destination_id     
+      AND fr2.origin_id > fr2.destination_id;
+
+ALTER VIEW views.migrate_fare_rules_symmetric OWNER TO trillium_gtfs_group;
+
+CREATE OR REPLACE FUNCTION views.migrate_fare_rules_symmetric_trigger ()
+RETURNS TRIGGER AS $$
+DECLARE
+BEGIN
+    IF TG_OP = 'DELETE' THEN 
+        -- Assert that there are no fare rules applying to fare_id which either
+        -- go from zone_id_a to zone_id_b or from zone_id_b to zone_id_a.
+        -- NOTE that zone_id_a must always be strictly less than zone_id_b
+        RAISE NOTICE 'deleted from migrate_fare_rules_symmetric:';
+        RAISE NOTICE 'fare_id % route_id % zone_id_a % zone_id_b % contains_id %'
+                    , OLD.fare_id
+                    , OLD.route_id
+                    , OLD.zone_id_a
+                    , OLD.zone_id_b
+                    , OLD.contains_id;
+
+        DELETE FROM migrate_fare_rules
+            WHERE fare_id = OLD.fare_id 
+              AND (   (origin_id = OLD.zone_id_a AND destination_id = OLD.zone_id_b)
+                   OR (origin_id = OLD.zone_id_b AND destination_id = OLD.zone_id_a))
+              AND (route_id = OLD.route_id 
+                   OR (route_id IS NULL AND OLD.route_id IS NULL))
+              AND  (contains_id = OLD.contains_id 
+                   OR (contains_id IS NULL AND OLD.contains_id IS NULL)) ; 
+    END IF;
+    IF TG_OP IN ('INSERT') THEN 
+        -- Assert that there are a pair of fare rules applying to fare_id
+        -- going from zone_id_a to zone_id_b, and from zone_id_b to zone_id_a.
+        RAISE NOTICE 'inserted into migrate_fare_rules_symmetric:';
+        RAISE NOTICE ' fare_id % route_id % zone_id_a % zone_id_b % contains_id %'
+                    , NEW.fare_id
+                    , NEW.route_id
+                    , NEW.zone_id_a
+                    , NEW.zone_id_b
+                    , NEW.contains_id;
+        DELETE FROM migrate_fare_rules
+            WHERE fare_id = NEW.fare_id 
+              AND (   (origin_id = NEW.zone_id_a AND destination_id = NEW.zone_id_b)
+                   OR (origin_id = NEW.zone_id_b AND destination_id = NEW.zone_id_a))
+              AND (route_id = NEW.route_id 
+                   OR (route_id IS NULL AND NEW.route_id IS NULL))
+              AND  (contains_id = NEW.contains_id 
+                   OR (contains_id IS NULL AND NEW.contains_id IS NULL)) ; 
+        INSERT INTO migrate_fare_rules
+            (fare_id, route_id, origin_id, destination_id, contains_id)
+        VALUES (NEW.fare_id, NEW.route_id, NEW.zone_id_a, NEW.zone_id_b, NEW.contains_id)
+             , (NEW.fare_id, NEW.route_id, NEW.zone_id_b, NEW.zone_id_a, NEW.contains_id);
+    END IF;
+
+    IF TG_OP IN ('INSERT', 'UPDATE') THEN 
+      RETURN NEW; -- success
+    END IF;
+    IF TG_OP = 'DELETE' THEN 
+      RETURN OLD; -- success
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+ALTER FUNCTION views.migrate_fare_rules_symmetric_trigger() OWNER TO trillium_gtfs_group;
+
+CREATE TRIGGER migrate_fare_rules_symmetric_delete 
+INSTEAD OF DELETE OR INSERT ON views.migrate_fare_rules_symmetric  
+FOR EACH ROW EXECUTE PROCEDURE views.migrate_fare_rules_symmetric_trigger();
+
+
+CREATE OR REPLACE VIEW views.migrate_fare_rules_asymmetric AS
+SELECT *
+FROM migrate_fare_rules fr
+WHERE    ((fr.fare_id
+         , fr.route_id
+         ,    least(fr.origin_id, fr.destination_id) -- zone a
+         , greatest(fr.origin_id, fr.destination_id) -- zone b
+         , fr.origin_id )
+              NOT IN (SELECT fare_id, route_id, zone_id_a, zone_id_b, origin_id 
+                      FROM views.migrate_fare_rules_symmetric));
+
+ALTER VIEW views.migrate_fare_rules_asymmetric OWNER TO trillium_gtfs_group;
+
+----- End of migrate_* version of views.
+
