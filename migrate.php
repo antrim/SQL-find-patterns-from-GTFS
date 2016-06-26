@@ -20,7 +20,7 @@ $table_prefix = "play_migrate";
 #   Larger values to diagnose problems uncovered by larger collections of agencies.
 #   Smaller values for quicker turnaround to debug the migration script itself.
 #
-$how_many_agencies_to_test = "80";
+$how_many_agencies_to_test = "8";
 $agency_string_query = "
     SELECT string_agg(agency_id::text, ', ' ORDER BY agency_id) AS agency_string
     FROM (      SELECT   1 AS agency_id
@@ -75,6 +75,7 @@ $truncate_migrate_tables_query = "
            , {$table_prefix}_fare_attributes
            , {$table_prefix}_fare_rider_categories
            , {$table_prefix}_fare_rules
+           , {$table_prefix}_zones
              RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
@@ -605,6 +606,30 @@ $fare_rules_symmetric_query = "
             ELSE True END;
 ";
 $result = db_query($fare_rules_symmetric_query);
+
+$migrate_zones_query = "
+    INSERT INTO {$table_prefix}_zones
+          (zone_id , zone_name , agency_id
+         , last_modified , zone_id_import )
+    SELECT zone_id , zone_name , agency_id
+           last_modified , zone_id_import 
+    FROM zones;
+";
+$result = db_query($migrate_zones_query);
+
+$get_least_unused_zone_id = "
+    SELECT 1 + MAX(zone_id)
+    FROM {$table_prefix}_zones";
+$result = db_query($get_least_unused_zone_id);
+$least_unused_zone_id = db_fetch_array($result)[0];
+echo "<br />\n least_unused_zone_id $least_unused_zone_id";
+$restart_zones_sequence = "
+    ALTER SEQUENCE {$table_prefix}_zones_zone_id_seq 
+    RESTART WITH $least_unused_zone_id
+    ";
+$result = db_query($restart_zones_sequence);
+
+
 
 echo "<br / >\n" . "Migration successful."
 
