@@ -233,6 +233,30 @@ $migrate_feeds_result = db_query($migrate_feeds_query);
 
 echo "<br />\n" . "\n\n".$migrate_feeds_query."\n\n";
 
+
+$migrate_zones_query = "
+    INSERT INTO {$table_prefix}_zones
+          (zone_id, zone_name, agency_id
+         , last_modified, zone_id_import )
+    SELECT zone_id, zone_name, agency_id
+         , last_modified, zone_id_import 
+    FROM zones;
+";
+$result = db_query($migrate_zones_query);
+
+$get_least_unused_zone_id = "
+    SELECT 1 + MAX(zone_id)
+    FROM {$table_prefix}_zones";
+$result = db_query($get_least_unused_zone_id);
+$least_unused_zone_id = db_fetch_array($result)[0];
+echo "<br />\n least_unused_zone_id $least_unused_zone_id";
+$restart_zones_sequence = "
+    ALTER SEQUENCE {$table_prefix}_zones_zone_id_seq 
+    RESTART WITH $least_unused_zone_id
+    ";
+$result = db_query($restart_zones_sequence);
+
+
 // pattern_stop.sql
 $migrate_pattern_stop_query  = "
     INSERT into {$table_prefix}_pattern_stops
@@ -359,10 +383,17 @@ $migrate_stops_query  = "
         (agency_id, stop_id, stop_code, platform_code, location_type, parent_station
        , stop_desc, stop_comments, location, zone_id
        , city, direction_id, url, publish_status, timezone)
-    SELECT agency_id, stop_id, stop_code, platform_code, location_type, parent_station
-         , stop_desc, stop_comments, geom::GEOGRAPHY, zone_id
-         , city, direction_id, stop_url, publish_status, stop_timezone
-    FROM stops
+   SELECT s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
+        , s.parent_station , s.stop_desc, s.stop_comments, s.geom::GEOGRAPHY
+
+-- LEFT JOIN means z.zone_id is NULL when zone_id doesn't match zones, 
+-- that's what we want. Ed 2016-06-26
+-- https://github.com/trilliumtransit/migrate-GTFS/issues/6#issuecomment-228627399 
+         , z.zone_id 
+
+         , s.city, direction_id, stop_url, publish_status, stop_timezone
+    FROM stops s
+    LEFT JOIN zones z USING (zone_id)
     WHERE agency_id IN ($agency_string);";
 $result = db_query($migrate_stops_query);
 
@@ -576,7 +607,13 @@ $migrate_fare_rules_query = "
          , destination_id, contains_id, agency_id
          , last_modified, fare_id_import, route_id_import
          , origin_id_import, destination_id_import, contains_id_import
-    FROM fare_rules; ";
+    FROM fare_rules
+    -- Require origin_id, destination_id, and contains_id to match a zone.
+    -- https://github.com/trilliumtransit/migrate-GTFS/issues/7#issuecomment-228627448 
+    WHERE origin_id IN (SELECT zone_id FROM {$table_prefix}_zones
+          AND destination_id IN (SELECT zone_id FROM {$table_prefix}_zones
+          AND contains_id IN (SELECT zone_id FROM {$table_prefix}_zones 
+        ; ";
 $result = db_query($migrate_fare_rules_query);
 
 $get_least_unused_fare_rule_id = "
@@ -606,29 +643,6 @@ $fare_rules_symmetric_query = "
             ELSE True END;
 ";
 $result = db_query($fare_rules_symmetric_query);
-
-$migrate_zones_query = "
-    INSERT INTO {$table_prefix}_zones
-          (zone_id, zone_name, agency_id
-         , last_modified, zone_id_import )
-    SELECT zone_id, zone_name, agency_id
-         , last_modified, zone_id_import 
-    FROM zones;
-";
-$result = db_query($migrate_zones_query);
-
-$get_least_unused_zone_id = "
-    SELECT 1 + MAX(zone_id)
-    FROM {$table_prefix}_zones";
-$result = db_query($get_least_unused_zone_id);
-$least_unused_zone_id = db_fetch_array($result)[0];
-echo "<br />\n least_unused_zone_id $least_unused_zone_id";
-$restart_zones_sequence = "
-    ALTER SEQUENCE {$table_prefix}_zones_zone_id_seq 
-    RESTART WITH $least_unused_zone_id
-    ";
-$result = db_query($restart_zones_sequence);
-
 
 
 echo "<br / >\n" . "Migration successful."
