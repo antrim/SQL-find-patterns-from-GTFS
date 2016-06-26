@@ -609,10 +609,10 @@ $result = db_query($fare_rules_symmetric_query);
 
 $migrate_zones_query = "
     INSERT INTO {$table_prefix}_zones
-          (zone_id , zone_name , agency_id
-         , last_modified , zone_id_import )
-    SELECT zone_id , zone_name , agency_id
-           last_modified , zone_id_import 
+          (zone_id, zone_name, agency_id
+         , last_modified, zone_id_import )
+    SELECT zone_id, zone_name, agency_id
+         , last_modified, zone_id_import 
     FROM zones;
 ";
 $result = db_query($migrate_zones_query);
