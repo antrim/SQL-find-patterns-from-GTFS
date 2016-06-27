@@ -253,7 +253,8 @@ $all_zones_wildcard_query = "
           , 'Wildcard: any or all zones for this agency.'
           , -411
           , NOW()
-          , 'Ed: wildcard zone representing any or all zones');
+          , '' /* Blank zone_id_import which means 'all' in GTFS. */
+      );
     ";
 $result = db_query($all_zones_wildcard_query);
 
