@@ -634,7 +634,7 @@ DELETE FROM {$table_prefix}_fare_rules
 WHERE fare_rule_id NOT IN (SELECT golden_fare_rule_id 
                       FROM distinct_fare_rules)
     ;";
-$result = db_query($migrate_fare_rules_query);
+$result = db_query($remove_duplicate_fare_rules_query);
 
 $get_least_unused_fare_rule_id = "
     SELECT 1 + MAX(fare_rule_id)
