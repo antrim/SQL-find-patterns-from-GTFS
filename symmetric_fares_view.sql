@@ -23,6 +23,7 @@ WHERE fr1.origin_id < fr1.destination_id
 
 ALTER VIEW views.play_migrate_fare_rules_symmetric OWNER TO trillium_gtfs_group;
 
+
 CREATE OR REPLACE FUNCTION views.play_migrate_fare_rules_symmetric_trigger ()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -50,12 +51,13 @@ BEGIN
         DELETE FROM play_migrate_fare_rules
             WHERE fare_id = OLD.fare_id 
               AND agency_id = OLD.agency_id
-              AND (   (origin_id = OLD.zone_id_a AND destination_id = OLD.zone_id_b)
-                   OR (origin_id = OLD.zone_id_b AND destination_id = OLD.zone_id_a))
-              AND (route_id = OLD.route_id 
-                   OR (route_id IS NULL AND OLD.route_id IS NULL))
-              AND  (contains_id = OLD.contains_id 
-                   OR (contains_id IS NULL AND OLD.contains_id IS NULL)) ; 
+              AND (  (null_means_all(origin_id) = null_means_all(OLD.zone_id_a) 
+                      AND null_means_all(destination_id) = null_means_all(OLD.zone_id_b))
+                   OR 
+                     (null_means_all(origin_id) = null_means_all(OLD.zone_id_b) 
+                      AND null_means_all(destination_id) = null_means_all(OLD.zone_id_a)))
+              AND null_means_all(route_id) = null_means_all(OLD.route_id)
+              AND null_means_all(contains_id) = null_means_all(OLD.contains_id);
     END IF;
     IF TG_OP IN ('INSERT','UPDATE') THEN 
         -- Assert that there are a pair of fare rules applying to fare_id
@@ -76,12 +78,13 @@ BEGIN
         DELETE FROM play_migrate_fare_rules
             WHERE fare_id = NEW.fare_id 
               AND agency_id = NEW.agency_id
-              AND (   (origin_id = NEW.zone_id_a AND destination_id = NEW.zone_id_b)
-                   OR (origin_id = NEW.zone_id_b AND destination_id = NEW.zone_id_a))
-              AND (route_id = NEW.route_id 
-                   OR (route_id IS NULL AND NEW.route_id IS NULL))
-              AND  (contains_id = NEW.contains_id 
-                   OR (contains_id IS NULL AND NEW.contains_id IS NULL)) ; 
+              AND (  (null_means_all(origin_id) = null_means_all(NEW.zone_id_a) 
+                      AND null_means_all(destination_id) = null_means_all(NEW.zone_id_b))
+                   OR 
+                     (null_means_all(origin_id) = null_means_all(NEW.zone_id_b) 
+                      AND null_means_all(destination_id) = null_means_all(NEW.zone_id_a)))
+              AND null_means_all(route_id) = null_means_all(NEW.route_id)
+              AND null_means_all(contains_id) = null_means_all(NEW.contains_id);
 
         INSERT INTO play_migrate_fare_rules
             (fare_id, agency_id, route_id, origin_id, destination_id, contains_id)
@@ -138,27 +141,13 @@ FROM play_migrate_fare_rules fr
 LEFT JOIN views.play_migrate_fare_rules_symmetric s
     ON      fr.fare_id = s.fare_id
         AND fr.agency_id = s.agency_id
-        AND ((fr.route_id  = s.route_id) 
-             OR (fr.route_id IS NULL AND s.route_id IS NULL))
-        AND    least(fr.origin_id, fr.destination_id) = s.zone_id_a
-        AND greatest(fr.origin_id, fr.destination_id) = s.zone_id_b
-        AND (fr.contains_id = s.contains_id 
-             OR (fr.contains_id IS NULL and s.contains_id IS NULL))
+        AND COALESCE(fr.route_id, -411)  = COALESCE(s.route_id, -411)
+        AND    least(COALESCE(fr.origin_id, -411)
+                   , COALESCE(fr.destination_id, -411)) = COALESCE(s.zone_id_a)
+        AND greatest(COALESCE(fr.origin_id, -411)
+                   , COALESCE(fr.destination_id, -411)) = COALESCE(s.zone_id_b)
+        AND COALESCE(fr.contains_id, -411)  = COALESCE(s.contains_id, -411)
 WHERE   s.agency_id IS NULL AND s.fare_id IS NULL;
-
-/*CREATE OR REPLACE VIEW views.play_migrate_fare_rules_asymmetric AS
-SELECT *
-FROM play_migrate_fare_rules fr
-WHERE    ((fr.fare_id
-         , fr.agency_id
-         , fr.route_id
-         ,    least(fr.origin_id, fr.destination_id) -- zone a
-         , greatest(fr.origin_id, fr.destination_id) -- zone b
-         , fr.origin_id )
-              NOT IN (SELECT fare_id, agency_id, route_id, zone_id_a
-                           , zone_id_b, origin_id 
-                      FROM views.play_migrate_fare_rules_symmetric));
-                      */
 
 ALTER VIEW views.play_migrate_fare_rules_asymmetric OWNER TO trillium_gtfs_group;
 
