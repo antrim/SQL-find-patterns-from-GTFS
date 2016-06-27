@@ -386,9 +386,10 @@ $migrate_stops_query  = "
    SELECT s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
         , s.parent_station , s.stop_desc, s.stop_comments, s.geom::GEOGRAPHY
 
--- LEFT JOIN means z.zone_id is NULL when zone_id doesn't match zones, 
--- that's what we want. Ed 2016-06-26
--- https://github.com/trilliumtransit/migrate-GTFS/issues/6#issuecomment-228627399 
+/* LEFT JOIN means z.zone_id is NULL when zone_id doesn't match zones, 
+ * that's what we want. Ed 2016-06-26
+ * https://github.com/trilliumtransit/migrate-GTFS/issues/6#issuecomment-228627399 
+ */
          , z.zone_id 
 
          , s.city, direction_id, stop_url, publish_status, stop_timezone
@@ -427,10 +428,9 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
                              WHERE trips.trip_id = frequencies.trip_id) 
              AND based_on IS NULL 
              AND trips.service_id IS NOT NULL 
-             -- Ed: only import trips whose first arrival_time is not null. 2016-06-24
+             /* Ed: only import trips whose first arrival_time is not null. 2016-06-24 */
              AND views.first_arrival_time_for_trip(trips.trip_id) IS NOT NULL 
        GROUP BY trips.agency_id, timed_pattern_id, calendar_id
-              -- , stop_times_first_stops.arrival_time
               , trips.trip_id, end_time
               , headway, block_id, monday, tuesday, wednesday, thursday
               , friday, saturday, sunday
@@ -608,8 +608,9 @@ $migrate_fare_rules_query = "
          , last_modified, fare_id_import, route_id_import
          , origin_id_import, destination_id_import, contains_id_import
     FROM fare_rules
-    -- Require origin_id, destination_id, and contains_id to match a zone.
-    -- https://github.com/trilliumtransit/migrate-GTFS/issues/7#issuecomment-228627448 
+    /* Require origin_id, destination_id, and contains_id to match a zone.
+       https://github.com/trilliumtransit/migrate-GTFS/issues/7#issuecomment-228627448 
+     */
     WHERE (origin_id IS NULL 
            OR origin_id IN (SELECT zone_id FROM {$table_prefix}_zones))
           AND (destination_id IS NULL 
@@ -620,7 +621,20 @@ $migrate_fare_rules_query = "
 $result = db_query($migrate_fare_rules_query);
 
 echo '\n <br/ >fare rules query';
-echo '\n <br/ >\n' .  $migrate_fare_rules_query;
+echo '\n <br/ >' .  $migrate_fare_rules_query;
+
+$remove_duplicate_fare_rules_query = "
+WITH distinct_fare_rules AS 
+    (SELECT agency_id, fare_id, route_id, origin_id, destination_id, contains_id
+         , max(fare_rule_id) as golden_fare_rule_id
+         , array_agg(fare_rule_id) AS fare_rule_id_agg, count(*)
+    FROM {$table_prefix}_fare_rules
+    GROUP BY agency_id, fare_id, route_id, origin_id, destination_id, contains_id)
+DELETE FROM {$table_prefix}_fare_rules
+WHERE fare_rule_id NOT IN (SELECT golden_fare_rule_id 
+                      FROM distinct_fare_rules)
+    ;";
+$result = db_query($migrate_fare_rules_query);
 
 $get_least_unused_fare_rule_id = "
     SELECT 1 + MAX(fare_rule_id)
