@@ -120,6 +120,11 @@ CREATE TABLE play_migrate_fare_rules (
 
 ALTER TABLE play_migrate_fare_rules OWNER TO trillium_gtfs_group;
 
+ALTER TABLE play_migrate_fare_rules ADD PRIMARY key (fare_rule_id);
+
+CREATE UNIQUE INDEX ON play_migrate_fare_rules 
+       (agency_id, fare_id, route_id, origin_id, destination_id, contains_id);
+
 --
 -- Name: play_migrate_fare_rules_fare_rule_id_seq; Type: SEQUENCE; Schema: public; Owner: trillium_gtfs_group
 --
@@ -372,6 +377,13 @@ CREATE TABLE migrate_fare_rules (
 
 
 ALTER TABLE migrate_fare_rules OWNER TO trillium_gtfs_group;
+
+ALTER TABLE migrate_fare_rules ADD PRIMARY key (fare_rule_id);
+
+CREATE UNIQUE INDEX ON migrate_fare_rules 
+       (agency_id, fare_id, route_id, origin_id, destination_id, contains_id);
+
+
 
 --
 -- Name: migrate_fare_rules_fare_rule_id_seq; Type: SEQUENCE; Schema: public; Owner: trillium_gtfs_group
