@@ -1,4 +1,27 @@
 
+/* 
+  For Fare rules, a NULL value for a column often means a rule that matches ANY
+  or ALL values for that column. 
+
+  In many cases, coercing NULL values to -411, which we use to mean "ALL",
+  allows much simpler joins and searches.
+
+  This function is useful for INTEGER or BIGINT columns, if columns of type 
+  TEXT (or other data types) need to be cooerced from NULL, just create a 
+  function with the same name but with a different parameter type, for example:
+
+  CREATE FUNCTION public.null_means_all(value TEXT) RETURNS TEXT AS $$
+     SELECT COALESCE(value, '**ALL**') $$ LANGUAGE SQL IMMUTABLE;
+
+  Ed 2016-06-27
+ */
+CREATE OR REPLACE FUNCTION public.null_means_all(value BIGINT) RETURNS BIGINT AS $$
+    SELECT COALESCE(value, -411)
+$$ LANGUAGE SQL IMMUTABLE;
+ALTER FUNCTION public.null_means_all(value BIGINT) OWNER TO trillium_gtfs_group;
+
+
+
 -- geography convenience functions.
 
 CREATE OR REPLACE FUNCTION ST_Lon ( point GEOGRAPHY ) RETURNS DOUBLE PRECISION as $$ 
