@@ -610,9 +610,12 @@ $migrate_fare_rules_query = "
     FROM fare_rules
     -- Require origin_id, destination_id, and contains_id to match a zone.
     -- https://github.com/trilliumtransit/migrate-GTFS/issues/7#issuecomment-228627448 
-    WHERE origin_id IN (SELECT zone_id FROM {$table_prefix}_zones)
-          AND destination_id IN (SELECT zone_id FROM {$table_prefix}_zones)
-          AND contains_id IN (SELECT zone_id FROM {$table_prefix}_zones)
+    WHERE (origin_id IS NULL 
+           OR origin_id IN (SELECT zone_id FROM {$table_prefix}_zones))
+          AND (destination_id IS NULL 
+               OR destination_id IN (SELECT zone_id FROM {$table_prefix}_zones))
+          AND (contains_id IS NULL 
+               OR contains_id IN (SELECT zone_id FROM {$table_prefix}_zones))
         ; ";
 $result = db_query($migrate_fare_rules_query);
 
