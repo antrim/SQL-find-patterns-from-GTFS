@@ -107,7 +107,7 @@ CREATE TABLE play_migrate_fare_rules (
     destination_id integer,
     contains_id integer,
     agency_id integer DEFAULT 0,
-    is_symmetric Boolean DEFAULT False NOT NULL, 
+    /* is_symmetric Boolean DEFAULT False NOT NULL,  */
     is_combinable Boolean DEFAULT True NOT NULL, 
     last_modified timestamp without time zone DEFAULT now() NOT NULL,
     fare_id_import character(35) DEFAULT NULL::bpchar,
@@ -365,7 +365,7 @@ CREATE TABLE migrate_fare_rules (
     destination_id integer,
     contains_id integer,
     agency_id integer DEFAULT 0,
-    is_symmetric  Boolean DEFAULT false NOT NULL,
+    /* is_symmetric  Boolean DEFAULT false NOT NULL, */
     is_combinable Boolean DEFAULT true NOT NULL,
     last_modified timestamp without time zone DEFAULT now() NOT NULL,
     fare_id_import character(35) DEFAULT NULL::bpchar,
