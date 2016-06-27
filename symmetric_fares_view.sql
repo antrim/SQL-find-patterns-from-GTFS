@@ -36,7 +36,7 @@ CREATE OR REPLACE FUNCTION views.play_migrate_fare_rules_symmetric_trigger ()
 RETURNS TRIGGER AS $$
 DECLARE
 BEGIN
-    IF TG_OP = 'DELETE' THEN 
+    IF TG_OP IN ('UPDATE','DELETE') THEN 
         -- Assert that there are no fare rules applying to fare_id which either
         -- go from zone_id_a to zone_id_b or from zone_id_b to zone_id_a.
         -- NOTE that zone_id_a must always be strictly less than zone_id_b
@@ -66,7 +66,7 @@ BEGIN
               AND  (contains_id = OLD.contains_id 
                    OR (contains_id IS NULL AND OLD.contains_id IS NULL)) ; 
     END IF;
-    IF TG_OP IN ('INSERT') THEN 
+    IF TG_OP IN ('INSERT','UPDATE') THEN 
         -- Assert that there are a pair of fare rules applying to fare_id
         -- going from zone_id_a to zone_id_b, and from zone_id_b to zone_id_a.
         RAISE NOTICE 'inserted into play_migrate_fare_rules_symmetric:';
@@ -117,12 +117,39 @@ ALTER FUNCTION views.play_migrate_fare_rules_symmetric_trigger() OWNER TO trilli
     -- Well, that's likely a problem even with our INSERT and DELETE operations?
     -- Or maybe its no problem at all.
     -- The lost metadata is fare_id_import etc. There might be another way to manage this.
+
+    -- For now we just treat UPDATE as DELETE of OLD followed by insert of NEW!
+    -- I think that's OK.
+
 CREATE TRIGGER play_migrate_fare_rules_symmetric_delete 
-INSTEAD OF DELETE OR INSERT ON views.play_migrate_fare_rules_symmetric  
+INSTEAD OF DELETE OR UPDATE OR INSERT ON views.play_migrate_fare_rules_symmetric  
 FOR EACH ROW EXECUTE PROCEDURE views.play_migrate_fare_rules_symmetric_trigger();
 
 
+/* We're looking for items which don't match fare_rules_symmetric.
+   The logic is significantly complicated by the prescense of NULLs which are
+   interpreted as wildcards in the case of route_id, origin_id, destination_id,
+   and contains_id. Ed 2016-06-26
+
+   What if we were to use "-1" as a universal wildcard?
+   Or perhaps -0xA11 :-)
+ */
+
 CREATE OR REPLACE VIEW views.play_migrate_fare_rules_asymmetric AS
+SELECT fr.*
+FROM play_migrate_fare_rules fr
+LEFT JOIN views.play_migrate_fare_rules_symmetric s
+    ON      fr.fare_id = s.fare_id
+        AND fr.agency_id = s.agency_id
+        AND ((fr.route_id  = s.route_id) 
+             OR (fr.route_id IS NULL AND s.route_id IS NULL))
+        AND    least(fr.origin_id, fr.destination_id) = s.zone_id_a
+        AND greatest(fr.origin_id, fr.destination_id) = s.zone_id_b
+        AND (fr.contains_id = s.contains_id 
+             OR (fr.contains_id IS NULL and s.contains_id IS NULL))
+WHERE   s.agency_id IS NULL AND s.fare_id IS NULL;
+
+/*CREATE OR REPLACE VIEW views.play_migrate_fare_rules_asymmetric AS
 SELECT *
 FROM play_migrate_fare_rules fr
 WHERE    ((fr.fare_id
@@ -134,19 +161,36 @@ WHERE    ((fr.fare_id
               NOT IN (SELECT fare_id, agency_id, route_id, zone_id_a
                            , zone_id_b, origin_id 
                       FROM views.play_migrate_fare_rules_symmetric));
+                      */
 
 ALTER VIEW views.play_migrate_fare_rules_asymmetric OWNER TO trillium_gtfs_group;
 
--- It would be good to verify that: 
---
---     SELECT (2 * count(*)) FROM views.play_migrate_fare_rules_symmetric;
---  +  SELECT      count(*)  FROM views.play_migrate_fare_rules_asymmetric; 
-----------------------------------------------------------
---  =  SELECT      count(*)  FROM play_migrate_fare_rules; !! 
--- 
---  But that math isn't possible until we're sure we've removed all duplicates
---  from play_migrate_fare_rules. Ed 2016-06-23.
+/* 
+ It would be good to verify that: 
 
+     SELECT (2 * count(*)) FROM views.play_migrate_fare_rules_symmetric;
+  +  SELECT      count(*)  FROM views.play_migrate_fare_rules_asymmetric; 
+ --------------------------------------------------------------------------
+  =  SELECT      count(*)  FROM play_migrate_fare_rules; !! 
+ 
+  But that math isn't possible until we're sure we've removed all duplicates
+  from play_migrate_fare_rules. Ed 2016-06-23.
+
+  The following query should evaluate to sum = 0.
+
+  WITH counts AS 
+  ( SELECT -2*count(*) AS c FROM views.play_migrate_fare_rules_symmetric
+    UNION ALL
+    SELECT -count(*) AS c FROM views.play_migrate_fare_rules_asymmetric
+    UNION ALL
+    SELECT count(*) AS c FROM play_migrate_fare_rules)
+  SELECT sum(c) FROM counts;
+  
+
+*/
+
+-- Bingo. This property now holds true with the new definition of
+-- views.play_migrate_fare_rules_asymmetric. Ed 2016-06-26.
 
 
 
@@ -154,6 +198,7 @@ ALTER VIEW views.play_migrate_fare_rules_asymmetric OWNER TO trillium_gtfs_group
 ---------------------
 --- migrate_* version of the views, below.
 ------ vvvvvvvvvvvvvv
+
 
 -- SELECT DISTINCT required for the time being since there appear to be some
 -- duplicate fare rules. ED 2016-06-23
@@ -183,7 +228,7 @@ CREATE OR REPLACE FUNCTION views.migrate_fare_rules_symmetric_trigger ()
 RETURNS TRIGGER AS $$
 DECLARE
 BEGIN
-    IF TG_OP = 'DELETE' THEN 
+    IF TG_OP IN ('UPDATE','DELETE') THEN 
         -- Assert that there are no fare rules applying to fare_id which either
         -- go from zone_id_a to zone_id_b or from zone_id_b to zone_id_a.
         -- NOTE that zone_id_a must always be strictly less than zone_id_b
@@ -213,7 +258,7 @@ BEGIN
               AND  (contains_id = OLD.contains_id 
                    OR (contains_id IS NULL AND OLD.contains_id IS NULL)) ; 
     END IF;
-    IF TG_OP IN ('INSERT') THEN 
+    IF TG_OP IN ('INSERT','UPDATE') THEN 
         -- Assert that there are a pair of fare rules applying to fare_id
         -- going from zone_id_a to zone_id_b, and from zone_id_b to zone_id_a.
         RAISE NOTICE 'inserted into migrate_fare_rules_symmetric:';
@@ -264,12 +309,39 @@ ALTER FUNCTION views.migrate_fare_rules_symmetric_trigger() OWNER TO trillium_gt
     -- Well, that's likely a problem even with our INSERT and DELETE operations?
     -- Or maybe its no problem at all.
     -- The lost metadata is fare_id_import etc. There might be another way to manage this.
+
+    -- For now we just treat UPDATE as DELETE of OLD followed by insert of NEW!
+    -- I think that's OK.
+
 CREATE TRIGGER migrate_fare_rules_symmetric_delete 
-INSTEAD OF DELETE OR INSERT ON views.migrate_fare_rules_symmetric  
+INSTEAD OF DELETE OR UPDATE OR INSERT ON views.migrate_fare_rules_symmetric  
 FOR EACH ROW EXECUTE PROCEDURE views.migrate_fare_rules_symmetric_trigger();
 
 
+/* We're looking for items which don't match fare_rules_symmetric.
+   The logic is significantly complicated by the prescense of NULLs which are
+   interpreted as wildcards in the case of route_id, origin_id, destination_id,
+   and contains_id. Ed 2016-06-26
+
+   What if we were to use "-1" as a universal wildcard?
+   Or perhaps -0xA11 :-)
+ */
+
 CREATE OR REPLACE VIEW views.migrate_fare_rules_asymmetric AS
+SELECT fr.*
+FROM migrate_fare_rules fr
+LEFT JOIN views.migrate_fare_rules_symmetric s
+    ON      fr.fare_id = s.fare_id
+        AND fr.agency_id = s.agency_id
+        AND ((fr.route_id  = s.route_id) 
+             OR (fr.route_id IS NULL AND s.route_id IS NULL))
+        AND    least(fr.origin_id, fr.destination_id) = s.zone_id_a
+        AND greatest(fr.origin_id, fr.destination_id) = s.zone_id_b
+        AND (fr.contains_id = s.contains_id 
+             OR (fr.contains_id IS NULL and s.contains_id IS NULL))
+WHERE   s.agency_id IS NULL AND s.fare_id IS NULL;
+
+/*CREATE OR REPLACE VIEW views.migrate_fare_rules_asymmetric AS
 SELECT *
 FROM migrate_fare_rules fr
 WHERE    ((fr.fare_id
@@ -281,20 +353,9 @@ WHERE    ((fr.fare_id
               NOT IN (SELECT fare_id, agency_id, route_id, zone_id_a
                            , zone_id_b, origin_id 
                       FROM views.migrate_fare_rules_symmetric));
+                      */
 
 ALTER VIEW views.migrate_fare_rules_asymmetric OWNER TO trillium_gtfs_group;
-
--- It would be good to verify that: 
---
---     SELECT (2 * count(*)) FROM views.migrate_fare_rules_symmetric;
---  +  SELECT      count(*)  FROM views.migrate_fare_rules_asymmetric; 
-----------------------------------------------------------
---  =  SELECT      count(*)  FROM migrate_fare_rules; !! 
--- 
---  But that math isn't possible until we're sure we've removed all duplicates
---  from migrate_fare_rules. Ed 2016-06-23.
-
-
 
 
 ------ ^^^^^^^^^^^^^^
