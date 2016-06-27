@@ -244,6 +244,19 @@ $migrate_zones_query = "
 ";
 $result = db_query($migrate_zones_query);
 
+
+$all_zones_wildcard_query = "
+    INSERT INTO {$table_prefix}_zones
+          (zone_id, zone_name, agency_id
+         , last_modified, zone_id_import )
+    VALUES (-411
+          , 'Wildcard: any or all zones for this agency.'
+          , -411
+          , NOW()
+          , 'Ed: wildcard zone representing any or all zones');
+    ";
+$result = db_query($all_zones_wildcard_query);
+
 $get_least_unused_zone_id = "
     SELECT 1 + MAX(zone_id)
     FROM {$table_prefix}_zones";
