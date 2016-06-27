@@ -631,21 +631,6 @@ $result = db_query($migrate_fare_rules_query);
 echo '\n <br/ >fare rules query';
 echo '\n <br/ >' .  $migrate_fare_rules_query;
 
-/*
-$remove_duplicate_fare_rules_query = "
-WITH distinct_fare_rules AS 
-    (SELECT agency_id, fare_id, route_id, origin_id, destination_id, contains_id
-         , max(fare_rule_id) as golden_fare_rule_id
-         , array_agg(fare_rule_id) AS fare_rule_id_agg, count(*)
-    FROM {$table_prefix}_fare_rules
-    GROUP BY agency_id, fare_id, route_id, origin_id, destination_id, contains_id)
-DELETE FROM {$table_prefix}_fare_rules
-WHERE fare_rule_id NOT IN (SELECT golden_fare_rule_id 
-                      FROM distinct_fare_rules)
-    ;";
-$result = db_query($remove_duplicate_fare_rules_query);
- */
-
 $get_least_unused_fare_rule_id = "
     SELECT 1 + MAX(fare_rule_id)
     FROM {$table_prefix}_fare_rules";
