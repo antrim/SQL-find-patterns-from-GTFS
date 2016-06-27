@@ -602,7 +602,7 @@ $migrate_fare_rules_query = "
         (SELECT agency_id, fare_id, route_id, origin_id, destination_id, contains_id
              , max(fare_rule_id) as golden_fare_rule_id
              , array_agg(fare_rule_id) AS fare_rule_id_agg, count(*)
-        FROM {$table_prefix}_fare_rules
+        FROM fare_rules
         GROUP BY agency_id, fare_id, route_id, origin_id, destination_id, contains_id)
     INSERT INTO {$table_prefix}_fare_rules 
         (fare_rule_id, fare_id, route_id, origin_id
