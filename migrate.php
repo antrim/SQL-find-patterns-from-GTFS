@@ -598,6 +598,12 @@ $restart_fare_rider_categories_sequence = "
 $result = db_query($restart_fare_rider_categories_sequence);
 
 $migrate_fare_rules_query = "
+    WITH distinct_fare_rules AS 
+        (SELECT agency_id, fare_id, route_id, origin_id, destination_id, contains_id
+             , max(fare_rule_id) as golden_fare_rule_id
+             , array_agg(fare_rule_id) AS fare_rule_id_agg, count(*)
+        FROM {$table_prefix}_fare_rules
+        GROUP BY agency_id, fare_id, route_id, origin_id, destination_id, contains_id)
     INSERT INTO {$table_prefix}_fare_rules 
         (fare_rule_id, fare_id, route_id, origin_id
        , destination_id, contains_id, agency_id
@@ -611,8 +617,10 @@ $migrate_fare_rules_query = "
     /* Require origin_id, destination_id, and contains_id to match a zone.
        https://github.com/trilliumtransit/migrate-GTFS/issues/7#issuecomment-228627448 
      */
-    WHERE (origin_id IS NULL 
-           OR origin_id IN (SELECT zone_id FROM {$table_prefix}_zones))
+    WHERE fare_rule_id IN (SELECT golden_fare_rule_id 
+                           FROM distinct_fare_rules)
+          AND (origin_id IS NULL 
+               OR origin_id IN (SELECT zone_id FROM {$table_prefix}_zones))
           AND (destination_id IS NULL 
                OR destination_id IN (SELECT zone_id FROM {$table_prefix}_zones))
           AND (contains_id IS NULL 
@@ -623,6 +631,7 @@ $result = db_query($migrate_fare_rules_query);
 echo '\n <br/ >fare rules query';
 echo '\n <br/ >' .  $migrate_fare_rules_query;
 
+/*
 $remove_duplicate_fare_rules_query = "
 WITH distinct_fare_rules AS 
     (SELECT agency_id, fare_id, route_id, origin_id, destination_id, contains_id
@@ -635,6 +644,7 @@ WHERE fare_rule_id NOT IN (SELECT golden_fare_rule_id
                       FROM distinct_fare_rules)
     ;";
 $result = db_query($remove_duplicate_fare_rules_query);
+ */
 
 $get_least_unused_fare_rule_id = "
     SELECT 1 + MAX(fare_rule_id)
