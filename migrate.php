@@ -311,6 +311,37 @@ $migrate_routes_stop_query  = "
     WHERE agency_id IN ($agency_string)";
 $result = db_query($migrate_routes_stop_query);
 
+/* ED 2016-05-27 On further thought, I think it's better not to include the 
+ * wildcard entries into the database.
+ *
+ * (1) They would match entries from multiple agencies, this could potentially 
+ *     complicate how we implement a security model, and exporting data.
+ *
+ * (2) For zones it isn't too bad, but many other tables expect very specific 
+ *     data in columns such as routes.bikes_allowed and agencies.phone.
+ *     We don't really want to end up with fake values in these columns, it's
+ *     probably more work to avoid this problem than to just bear in mind that
+ *     -411 is a shorthand for all when writing views and join code.
+ */
+
+/*
+$all_routes_wildcard_query = "
+    INSERT INTO {$table_prefix}_routes
+        (agency_id, route_id, route_short_name, route_long_name,
+        , route_desc, route_type
+         , last_modified, zone_id_import )
+    VALUES (-411
+          , 'Wildcard: any or all routes for this agency.'
+          , -411
+          , NOW()
+          , '' -- Blank zone_id_import which means 'all' in GTFS. 
+      );
+    ";
+$result = db_query($all_routes_wildcard_query);
+ */
+
+
+
 // patterns.sql
 // some patterns may be used by multiple routes/directions!!!!
 // one way to test this is: SELECT DISTINCT ON (pattern_id) agency_id, pattern_id, route_id, direction_id
@@ -658,11 +689,14 @@ $restart_fare_rules_sequence = "
 $result = db_query($restart_fare_rules_sequence);
 
 
+/* 
 # TODO, either:
 # (1) This UPDATE should be automatically re-run via trigger, whenever 
 #     {$table_prefix}_fare_rules is modified. 
 # (2) Or, we should remove the is_symmetric column and instead use 
 #     views.{$table_prefix)_fare_rules_(symmetric|asymmetric)
+    #
+    #  2016-06-27 -- I think it makes more sense to remove this column. Ed.
 $fare_rules_symmetric_query = "
     UPDATE {$table_prefix}_fare_rules
     SET is_symmetric = CASE 
@@ -672,6 +706,7 @@ $fare_rules_symmetric_query = "
             ELSE True END;
 ";
 $result = db_query($fare_rules_symmetric_query);
+ */
 
 
 echo "<br / >\n" . "Migration successful."
