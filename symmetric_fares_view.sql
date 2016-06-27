@@ -1,12 +1,3 @@
-/* -- ED: this is not needed any longer, I've updated the symmetric view to
-   -- work with route_id and contains_id. 2016-06-24
-CREATE VIEW views.play_migrate_fare_rules_no_route_no_contains AS
-SELECT *
-FROM play_migrate_fare_rules fr
-WHERE fr.route_id IS NULL AND fr.contains_id IS NULL;
-
-ALTER VIEW views.play_migrate_fare_rules_no_route_no_contains OWNER TO trillium_gtfs_group;
-*/
 
 -- SELECT DISTINCT required for the time being since there appear to be some
 -- duplicate fare rules. ED 2016-06-23
@@ -111,12 +102,19 @@ ALTER FUNCTION views.play_migrate_fare_rules_symmetric_trigger() OWNER TO trilli
 
 
     -- HMM, what should we do if they 'UPDATE'?
-    -- If they _only_ updated columns are fare_id, agency_id, zone_id_a, and zone_id_b, then we
-    -- can act as though the OLD row was deleted, and the NEW one inserted.
-    -- only problem with this is underlying table may possibly lose some metadata.
+    -- If they only updated "key" columns such as the following: fare_id,
+    -- agency_id, route_id, zone_id_a, zone_id_b, or contains_id; then we can
+    -- act as though the OLD row was deleted, and the NEW one inserted.
+    --
+    -- If they only update "non-key" columns such as is_combinable or
+    -- foo_id_import, we should most likely update the underlying fare_rule_id columns.
+    --
+    -- Only problem with this is underlying table may possibly lose some metadata.
     -- Well, that's likely a problem even with our INSERT and DELETE operations?
     -- Or maybe its no problem at all.
+    --
     -- The lost metadata is fare_id_import etc. There might be another way to manage this.
+    -- 
 
     -- For now we just treat UPDATE as DELETE of OLD followed by insert of NEW!
     -- I think that's OK.
@@ -131,8 +129,7 @@ FOR EACH ROW EXECUTE PROCEDURE views.play_migrate_fare_rules_symmetric_trigger()
    interpreted as wildcards in the case of route_id, origin_id, destination_id,
    and contains_id. Ed 2016-06-26
 
-   What if we were to use "-1" as a universal wildcard?
-   Or perhaps -0xA11 :-)
+   What if we were to use "-1" or "-411" as a universal wildcard?
  */
 
 CREATE OR REPLACE VIEW views.play_migrate_fare_rules_asymmetric AS
@@ -340,20 +337,6 @@ LEFT JOIN views.migrate_fare_rules_symmetric s
         AND (fr.contains_id = s.contains_id 
              OR (fr.contains_id IS NULL and s.contains_id IS NULL))
 WHERE   s.agency_id IS NULL AND s.fare_id IS NULL;
-
-/*CREATE OR REPLACE VIEW views.migrate_fare_rules_asymmetric AS
-SELECT *
-FROM migrate_fare_rules fr
-WHERE    ((fr.fare_id
-         , fr.agency_id
-         , fr.route_id
-         ,    least(fr.origin_id, fr.destination_id) -- zone a
-         , greatest(fr.origin_id, fr.destination_id) -- zone b
-         , fr.origin_id )
-              NOT IN (SELECT fare_id, agency_id, route_id, zone_id_a
-                           , zone_id_b, origin_id 
-                      FROM views.migrate_fare_rules_symmetric));
-                      */
 
 ALTER VIEW views.migrate_fare_rules_asymmetric OWNER TO trillium_gtfs_group;
 
