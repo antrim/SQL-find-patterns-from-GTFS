@@ -20,7 +20,7 @@ $table_prefix = "play_migrate";
 #   Larger values to diagnose problems uncovered by larger collections of agencies.
 #   Smaller values for quicker turnaround to debug the migration script itself.
 #
-$how_many_agencies_to_test = "8";
+$how_many_agencies_to_test = "80";
 $agency_string_query = "
     SELECT string_agg(agency_id::text, ', ' ORDER BY agency_id) AS agency_string
     FROM (      SELECT   1 AS agency_id
