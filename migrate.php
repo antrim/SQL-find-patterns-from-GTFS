@@ -311,7 +311,7 @@ $migrate_routes_stop_query  = "
     WHERE agency_id IN ($agency_string)";
 $result = db_query($migrate_routes_stop_query);
 
-/* ED 2016-05-27 On further thought, I think it's better not to include the 
+/* ED 2016-06-27 On further thought, I think it's better not to include the 
  * wildcard entries into the database.
  *
  * (1) They would match entries from multiple agencies, this could potentially 
@@ -672,6 +672,18 @@ $migrate_fare_rules_query = "
                OR contains_id IN (SELECT zone_id FROM {$table_prefix}_zones))
         ; ";
 $result = db_query($migrate_fare_rules_query);
+
+
+$fare_rules_combinable_query = "
+    UPDATE {$table_prefix}_fare_rules
+        SET is_combinable = False 
+    WHERE agency_id IN (42, 175)
+          OR (agency_id = (19) 
+              AND origin_id IS NOT NULL)
+          OR (agency_id = (19) 
+              AND destination_id IS NOT NULL)
+  ; ";
+$result = db_query($fare_rules_combinable_query);
 
 echo '\n <br/ >fare rules query';
 echo '\n <br/ >' .  $migrate_fare_rules_query;
