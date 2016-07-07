@@ -425,11 +425,12 @@ $result = db_query($migrate_blocks_query);
 // stops
 $migrate_stops_query  = "
     INSERT into {$table_prefix}_stops 
-        (agency_id, stop_id, stop_code, platform_code, location_type, parent_station
-       , stop_desc, stop_comments, location, zone_id
-       , city, direction_id, url, publish_status, timezone)
+        (agency_id, stop_id, stop_code, platform_code, location_type
+        , parent_station, stop_name, stop_desc, stop_comments, location
+        , zone_id
+        , city, direction_id, url, publish_status, timezone)
    SELECT s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
-        , s.parent_station , s.stop_desc, s.stop_comments, s.geom::GEOGRAPHY
+        , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments, s.geom::GEOGRAPHY
 
 /* LEFT JOIN means z.zone_id is NULL when zone_id doesn't match zones, 
  * that's what we want. Ed 2016-06-26
