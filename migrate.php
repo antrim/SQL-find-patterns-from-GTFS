@@ -65,13 +65,13 @@ $truncate_migrate_tables_query = "
            , {$table_prefix}_schedules
            , {$table_prefix}_calendars
            , {$table_prefix}_calendar_bounds
+           , {$table_prefix}_calendar_dates
+           , {$table_prefix}_calendar_date_service_exceptions
            , {$table_prefix}_stops
            , {$table_prefix}_blocks
            , {$table_prefix}_feeds
            , {$table_prefix}_shape_segments
            , {$table_prefix}_pattern_custom_shape_segments
-           , {$table_prefix}_calendar_dates
-           , {$table_prefix}_calendar_date_service_exceptions
            , {$table_prefix}_fare_attributes
            , {$table_prefix}_fare_rider_categories
            , {$table_prefix}_fare_rules
@@ -351,6 +351,110 @@ $migrate_pattern_query  = "
     FROM {$table_prefix}_timed_pattern_stops_nonnormalized
     ORDER BY  pattern_id, agency_id, route_id, direction_id";
 $result = db_query($migrate_pattern_query);
+
+
+// TODO: assign names to patterns based on their first stop, last stop, and 
+// number of stops. Ed 2016-07-10
+// https://github.com/trilliumtransit/migrate-GTFS/issues/12
+//
+
+/* 
+    select * 
+    from play_migrate_patterns 
+    join play_migrate_pattern_stops using(pattern_id) 
+    join migrate_stops using (stop_id) 
+    where pattern_id in (1,2,3)
+    
+    ;
+
+
+WITH 
+pattern_stop_summary AS 
+( SELECT 
+    pattern_id, 
+    count(*) as number_of_stops, 
+    min(stop_order) as min_stop_order, 
+    max(stop_order) as max_stop_order 
+  FROM play_migrate_pattern_stops 
+  group by pattern_id)
+
+SELECT p.pattern_id
+  , s1.stop_name || ' to ' || sN.stop_name || ' x' || number_of_stops AS name
+FROM play_migrate_patterns p
+JOIN pattern_stop_summary ps using(pattern_id) 
+
+join play_migrate_pattern_stops ps1
+  on (ps1.pattern_id = p.pattern_id AND ps1.stop_order = min_stop_order) 
+join play_migrate_pattern_stops psN
+  on (psN.pattern_id = p.pattern_id AND psN.stop_order = max_stop_order) 
+
+JOIN stops s1 ON (s1.stop_id = ps1.stop_id)
+JOIN stops sN ON (sN.stop_id = psN.stop_id)
+WHERE p.pattern_id in (1,2,3);
+
+
+*************************************
+
+
+WITH 
+
+pattern_stop_summary AS 
+( SELECT 
+    pattern_id, 
+    count(*) AS number_of_stops, 
+    min(stop_order) AS min_stop_order, 
+    max(stop_order) AS max_stop_order 
+  FROM play_migrate_pattern_stops 
+  GROUP BY pattern_id), 
+
+generated_names AS 
+( SELECT p.pattern_id
+  , s1.stop_name || ' to ' || sN.stop_name || ' x' || number_of_stops AS generated_name
+  FROM play_migrate_patterns p
+  JOIN pattern_stop_summary ps using(pattern_id) 
+  JOIN play_migrate_pattern_stops ps1
+       ON (ps1.pattern_id = p.pattern_id AND ps1.stop_order = min_stop_order) 
+  JOIN play_migrate_pattern_stops psN
+       ON (psN.pattern_id = p.pattern_id AND psN.stop_order = max_stop_order) 
+  JOIN stops s1 ON (s1.stop_id = ps1.stop_id)
+  JOIN stops sN ON (sN.stop_id = psN.stop_id))
+
+UPDATE play_migrate_patterns SET name = generated_name 
+FROM generated_names
+WHERE generated_names.pattern_id = play_migrate_patterns.pattern_id;
+
+ */
+
+$pattern_names_query = "
+WITH 
+
+pattern_stop_summary AS 
+( SELECT 
+    pattern_id, 
+    count(*) AS number_of_stops, 
+    min(stop_order) AS min_stop_order, 
+    max(stop_order) AS max_stop_order 
+  FROM {$table_prefix}_pattern_stops 
+  GROUP BY pattern_id), 
+
+generated_names AS 
+( SELECT p.pattern_id
+  , s1.stop_name || ' to ' || sN.stop_name || ' x' || number_of_stops AS generated_name
+  FROM {$table_prefix}_patterns p
+  JOIN pattern_stop_summary ps using(pattern_id) 
+  JOIN {$table_prefix}_pattern_stops ps1
+       ON (ps1.pattern_id = p.pattern_id AND ps1.stop_order = min_stop_order) 
+  JOIN {$table_prefix}_pattern_stops psN
+       ON (psN.pattern_id = p.pattern_id AND psN.stop_order = max_stop_order) 
+  JOIN stops s1 ON (s1.stop_id = ps1.stop_id)
+  JOIN stops sN ON (sN.stop_id = psN.stop_id))
+
+UPDATE ${table_prefix}_patterns SET name = generated_name 
+FROM generated_names
+WHERE generated_names.pattern_id = {$table_prefix}_patterns.pattern_id;
+    ";
+$result = db_query($pattern_names_query);
+
 
 // continuing with patterns.sql
 // ALERT! Some patterns are on multiple routes. I need to figure out how to 

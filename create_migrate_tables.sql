@@ -57,6 +57,11 @@ CREATE OR REPLACE FUNCTION ST_LengthMiles( geog GEOGRAPHY ) RETURNS DOUBLE PRECI
 $$ LANGUAGE SQL IMMUTABLE;
 
 
+CREATE OR REPLACE FUNCTION is_valid_css_color(color text) RETURNS boolean AS $$
+  SELECT lower(color) ~ '^[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]$' 
+         or lower(color) ~ '^(aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|blue|blueviolet|brown|burlywood|cadetblue|chartreuse|chocolate|coral|cornflowerblue|cornsilk|crimson|cyan|darkblue|darkcyan|darkgoldenrod|darkgray|darkgreen|darkgrey|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|darkred|darksalmon|darkseagreen|darkslateblue|darkslategray|darkslategrey|darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dimgrey|dodgerblue|firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|gold|goldenrod|gray|green|greenyellow|grey|honeydew|hotpink|indianred|indigo|ivory|khaki|lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|lightgoldenrodyellow|lightgray|lightgreen|lightgrey|lightpink|lightsalmon|lightseagreen|lightskyblue|lightslategray|lightslategrey|lightsteelblue|lightyellow|lime|limegreen|linen|magenta|maroon|mediumaquamarine|mediumblue|mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|mediumspringgreen|mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|navajowhite|navy|oldlace|olive|olivedrab|orange|orangered|orchid|palegoldenrod|palegreen|paleturquoise|palevioletred|papayawhip|peachpuff|peru|pink|plum|powderblue|purple|red|rosybrown|royalblue|saddlebrown|salmon|sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|slategrey|snow|springgreen|steelblue|tan|teal|thistle|tomato|turquoise|violet|wheat|white|whitesmoke|yellow|yellowgreen|transparent)$';
+        $$ LANGUAGE SQL IMMUTABLE;
+
 CREATE TABLE "public"."migrate_agencies" ( 
 	"agency_id" Serial NOT NULL,
 	"feed_id" SmallInt,
@@ -100,12 +105,14 @@ CREATE TABLE "public"."play_migrate_agencies" (
 	"agency_id" Integer NOT NULL,
 	"block_id" Serial NOT NULL,
 	"label" Character Varying( 2044 ) NOT NULL,
+	"color" text check (is_valid_css_color(color)),
 	PRIMARY KEY ( "block_id" ) );
 
  CREATE TABLE "public"."play_migrate_blocks" ( 
 	"agency_id" Integer NOT NULL,
 	"block_id" Serial NOT NULL,
 	"label" Character Varying( 2044 ) NOT NULL,
+	"color" text check (is_valid_css_color(color)),
 	PRIMARY KEY ( "block_id" ) );
 
 CREATE TABLE "public"."migrate_calendars" ( 
@@ -172,6 +179,7 @@ CREATE TABLE "public"."play_migrate_headsigns" (
 	"route_id" Bigint NOT NULL,
 	"direction_id" Bigint,
 	"headsign_id" Bigint,
+    "name" text,
 	PRIMARY KEY ( "pattern_id" ) );
 
  CREATE TABLE "public"."play_migrate_patterns" ( 
@@ -180,6 +188,7 @@ CREATE TABLE "public"."play_migrate_headsigns" (
 	"route_id" Bigint NOT NULL,
 	"direction_id" Bigint,
 	"headsign_id" Bigint,
+    "name" text,
 	PRIMARY KEY ( "pattern_id" ) );
 
  CREATE TABLE "public"."migrate_pattern_stops" ( 
@@ -272,11 +281,13 @@ CREATE TABLE "public"."play_migrate_schedules" (
  CREATE TABLE "public"."migrate_timed_patterns" ( 
 	"agency_id" SmallInt NOT NULL,
 	"timed_pattern_id" Bigint NOT NULL,
+    "name" text DEFAULT NULL,
 	"pattern_id" Bigint NOT NULL );
 
  CREATE TABLE "public"."play_migrate_timed_patterns" ( 
 	"agency_id" SmallInt NOT NULL,
 	"timed_pattern_id" Bigint NOT NULL,
+    "name" text DEFAULT NULL,
 	"pattern_id" Bigint NOT NULL );
 
  CREATE TABLE "public"."migrate_timed_pattern_stops" ( 
