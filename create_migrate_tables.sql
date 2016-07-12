@@ -1,4 +1,87 @@
 
+/* Array difference operators. Thanks to
+ * http://www.databasesoup.com/2015/03/fancy-sql-friday-subtracting-arrays.html 
+ */
+
+create or replace function array_diff_elements(anyarray, anyarray)
+returns anyarray as
+$fn$
+    select
+        array(
+            select unnest($1)
+             except
+            select unnest($2));
+$fn$
+language sql immutable;
+
+create operator - (
+    procedure = array_diff_elements,
+    leftarg   = anyarray,
+    rightarg  = anyarray
+);
+
+
+create or replace function array_diff_elements_text ( text[], text[] )
+returns text[]
+language sql
+immutable
+as $f$
+    SELECT array_agg(DISTINCT new_arr.elem)
+    FROM
+        unnest($1) as new_arr(elem)
+        LEFT OUTER JOIN
+        unnest($2) as old_arr(elem)
+        ON new_arr.elem = old_arr.elem
+    WHERE old_arr.elem IS NULL;
+$f$;
+
+create operator - (
+    procedure = array_diff_elements_text,
+    leftarg = text[],
+    rightarg = text[]
+);
+
+create or replace function array_diff_elements_integer ( integer[], integer[] )
+returns integer[]
+language sql
+immutable
+as $f$
+    SELECT array_agg(DISTINCT new_arr.elem)
+    FROM
+        unnest($1) as new_arr(elem)
+        LEFT OUTER JOIN
+        unnest($2) as old_arr(elem)
+        ON new_arr.elem = old_arr.elem
+    WHERE old_arr.elem IS NULL;
+$f$;
+
+create operator - (
+    procedure = array_diff_elements_integer,
+    leftarg = integer[],
+    rightarg = integer[]
+);
+
+create or replace function array_diff_elements_bigint ( bigint[], bigint[] )
+returns bigint[]
+language sql
+immutable
+as $f$
+    SELECT array_agg(DISTINCT new_arr.elem)
+    FROM
+        unnest($1) as new_arr(elem)
+        LEFT OUTER JOIN
+        unnest($2) as old_arr(elem)
+        ON new_arr.elem = old_arr.elem
+    WHERE old_arr.elem IS NULL;
+$f$;
+
+create operator - (
+    procedure = array_diff_elements_bigint,
+    leftarg = bigint[],
+    rightarg = bigint[]
+);
+
+
 /* 
   For Fare rules, a NULL value for a column often means a rule that matches ANY
   or ALL values for that column.  Examples include route_id, origin_id,
