@@ -628,7 +628,6 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
                              WHERE trips.trip_id = frequencies.trip_id) 
              AND based_on IS NULL 
              AND trips.service_id IS NOT NULL 
-             /* Ed: only import trips whose first arrival_time is not null. 2016-06-24 */
              AND views.first_arrival_time_for_trip(trips.trip_id) IS NOT NULL 
        GROUP BY trips.agency_id, timed_pattern_id, calendar_id
               , trips.trip_id, end_time
