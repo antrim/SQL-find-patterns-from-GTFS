@@ -441,8 +441,10 @@ $migrate_stops_query  = "
 
          , s.city, direction_id, stop_url, publish_status, stop_timezone
     FROM stops s
-    LEFT JOIN zones z USING (zone_id)
-    WHERE s.agency_id IN ($agency_string);";
+    LEFT JOIN zones z USING (zone_id);";
+// Ed: migrate everything. Since some stops are owned by agencies we *don't* want 
+// to migrate, but they are used by trips which we *do* want to migrate.
+##   WHERE s.agency_id IN ($agency_string);";
 $result = db_query($migrate_stops_query);
 
 $patterns_nonnormalized_query = "
