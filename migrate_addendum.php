@@ -28,7 +28,7 @@ pattern_stop_summary AS
 
 generated_names AS 
 ( SELECT p.pattern_id
-  , s1.stop_name || ' to ' || sN.stop_name || ' x' || number_of_stops AS generated_name
+  , s1.name || ' to ' || sN.name || ' x' || number_of_stops AS generated_name
   FROM {$table_prefix}_patterns p
   JOIN pattern_stop_summary ps using(pattern_id) 
   JOIN {$table_prefix}_pattern_stops ps1
@@ -82,10 +82,10 @@ join
         then 'Primary' 
         else case when (n_added_stops > 3 or n_added_stops = 0)
                  then '+ ' || n_added_stops || ' stops'
-                 else '+ ' || (select string_agg(stop_name, ' + ') from  {$table_prefix}_stops where stop_id   in (select unnest(added_stop_ids))) end
+                 else '+ ' || (select string_agg(name, ' + ') from  {$table_prefix}_stops where stop_id   in (select unnest(added_stop_ids))) end
           || case when (n_removed_stops > 3 or n_removed_stops = 0)
                  then ' - ' || n_removed_stops || ' stops'
-                 else ' - ' || (select string_agg(stop_name, ' - ') from  {$table_prefix}_stops where stop_id   in (select unnest(removed_stop_ids))) end
+                 else ' - ' || (select string_agg(name, ' - ') from  {$table_prefix}_stops where stop_id   in (select unnest(removed_stop_ids))) end
         end
    as generated_name
 from patterns_with_stops_difference
