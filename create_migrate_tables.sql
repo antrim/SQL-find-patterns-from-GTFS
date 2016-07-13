@@ -332,7 +332,7 @@ CREATE TABLE "public"."play_migrate_schedules" (
 	"parent_station" Integer,  -- NOT NULL,
 	"stop_desc" Character Varying( 2044 ), -- NOT NULL,
 	"stop_comments" Character Varying( 2044 ),
-	"location" "public".GEOGRAPHY,
+	"point" "public".GEOGRAPHY,
 	"zone_id" Integer, --  NOT NULL,
 	"platform_code" Character Varying( 2044 ), -- NOT NULL,
 	"city" Character Varying( 2044 ), --  NOT NULL,
@@ -351,7 +351,7 @@ CREATE TABLE "public"."play_migrate_schedules" (
 	"parent_station" Integer,  -- NOT NULL,
 	"stop_desc" Character Varying( 2044 ), -- NOT NULL,
 	"stop_comments" Character Varying( 2044 ),
-	"location" "public".GEOGRAPHY,
+	"point" "public".GEOGRAPHY,
 	"zone_id" Integer, --  NOT NULL,
 	"platform_code" Character Varying( 2044 ), -- NOT NULL,
 	"city" Character Varying( 2044 ), --  NOT NULL,
@@ -507,7 +507,7 @@ CREATE TABLE "public"."play_migrate_feeds" (
 CREATE TABLE "public"."migrate_shape_segments" (
     from_stop_id integer NOT NULL,
     to_stop_id   integer NOT NULL,
-    geog GEOGRAPHY, -- line string
+    linestring GEOGRAPHY, -- line string
     last_modified timestamptz DEFAULT NOW()
 );
 CREATE UNIQUE INDEX ON "public"."migrate_shape_segments" (from_stop_id, to_stop_id);
@@ -516,7 +516,7 @@ CREATE INDEX ON "public"."migrate_shape_segments" (to_stop_id);
 CREATE TABLE "public"."play_migrate_shape_segments" (
     from_stop_id integer NOT NULL,
     to_stop_id   integer NOT NULL,
-    geog GEOGRAPHY,  -- line string.
+    linestring GEOGRAPHY,  -- line string.
     last_modified timestamptz DEFAULT NOW()
 );
 CREATE UNIQUE INDEX ON "public"."play_migrate_shape_segments" (from_stop_id, to_stop_id);
@@ -526,7 +526,7 @@ CREATE TABLE "public"."migrate_pattern_custom_shape_segments" (
     pattern_id INTEGER,
     from_stop_id INTEGER,
     to_stop_id INTEGER,
-    geog GEOGRAPHY
+    linestring GEOGRAPHY
 );
 CREATE UNIQUE INDEX ON "public"."migrate_pattern_custom_shape_segments" 
        (pattern_id, from_stop_id, to_stop_id);
@@ -535,7 +535,7 @@ CREATE TABLE "public"."play_migrate_pattern_custom_shape_segments" (
     pattern_id INTEGER,
     from_stop_id INTEGER,
     to_stop_id INTEGER,
-    geog GEOGRAPHY
+    linestring GEOGRAPHY
 );
 CREATE UNIQUE INDEX ON "public"."play_migrate_pattern_custom_shape_segments"
        (pattern_id, from_stop_id, to_stop_id);

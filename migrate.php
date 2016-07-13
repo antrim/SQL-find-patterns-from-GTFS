@@ -236,9 +236,9 @@ echo "<br />\n" . "\n\n".$migrate_feeds_query."\n\n";
 
 $migrate_zones_query = "
     INSERT INTO {$table_prefix}_zones
-          (zone_id, zone_name, agency_id
+          (zone_id, name, agency_id
          , last_modified, zone_id_import )
-    SELECT zone_id, zone_name, agency_id
+    SELECT zone_id, zone_name AS name, agency_id
          , last_modified, zone_id_import 
     FROM zones;
 ";
@@ -247,7 +247,7 @@ $result = db_query($migrate_zones_query);
 
 $all_zones_wildcard_query = "
     INSERT INTO {$table_prefix}_zones
-          (zone_id, zone_name, agency_id
+          (zone_id, name, agency_id
          , last_modified, zone_id_import )
     VALUES (-411
           , 'Wildcard: any or all zones for this agency.'
@@ -427,11 +427,11 @@ $result = db_query($migrate_blocks_query);
 $migrate_stops_query  = "
     INSERT into {$table_prefix}_stops 
         (agency_id, stop_id, stop_code, platform_code, location_type
-        , parent_station, stop_name, stop_desc, stop_comments, location
+        , parent_station, stop_name, stop_desc, stop_comments, point
         , zone_id
         , city, direction_id, url, publish_status, timezone)
    SELECT s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
-        , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments, s.geom::GEOGRAPHY
+        , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments, s.geom::GEOGRAPHY as point
 
 /* LEFT JOIN means z.zone_id is NULL when zone_id doesn't match zones, 
  * that's what we want. Ed 2016-06-26
@@ -541,7 +541,7 @@ $migrate_shape_segments_query  = "
     INSERT into {$table_prefix}_shape_segments 
         (from_stop_id, to_stop_id
        , last_modified
-       , geog )
+       , linestring )
     WITH most_recent AS (
          SELECT shape_segments.start_coordinate_id,
             shape_segments.end_coordinate_id,

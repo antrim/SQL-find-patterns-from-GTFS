@@ -520,7 +520,7 @@ GRANT ALL ON SEQUENCE migrate_fare_rules_fare_rule_id_seq TO trillium_gtfs_group
 
 create table play_migrate_zones (
     zone_id SERIAL,
-    zone_name text,
+    name text,
     agency_id integer,
     last_modified timestamp DEFAULT now(),
     zone_id_import text
@@ -531,7 +531,7 @@ ALTER TABLE play_migrate_zones OWNER TO trillium_gtfs_group;
 
 create table migrate_zones (
     zone_id SERIAL,
-    zone_name text,
+    name text,
     agency_id integer,
     last_modified timestamp DEFAULT now(),
     zone_id_import text
