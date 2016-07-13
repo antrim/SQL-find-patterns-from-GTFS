@@ -485,7 +485,7 @@ CREATE TABLE "public"."play_migrate_schedules" (
 	"stop_headsign_id" Bigint );
 
 CREATE TABLE "public"."migrate_feeds" (
-    feed_name character varying(2044) NOT NULL,
+    name character varying(2044) NOT NULL,
     contact_email character varying(2044) ,
     contact_url character varying(2044),
     license character varying(2044) ,
@@ -494,7 +494,7 @@ CREATE TABLE "public"."migrate_feeds" (
 );
 
 CREATE TABLE "public"."play_migrate_feeds" (
-    feed_name character varying(2044) NOT NULL,
+    name character varying(2044) NOT NULL,
     contact_email character varying(2044) ,
     contact_url character varying(2044),
     license character varying(2044) ,
