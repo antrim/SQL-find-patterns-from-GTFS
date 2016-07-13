@@ -187,27 +187,27 @@ CREATE TABLE "public"."play_migrate_agencies" (
  CREATE TABLE "public"."migrate_blocks" ( 
 	"agency_id" Integer NOT NULL,
 	"block_id" Serial NOT NULL,
-	"label" Character Varying( 2044 ) NOT NULL,
+	"name" text NOT NULL,
 	"color" text check (is_valid_css_color(color)),
 	PRIMARY KEY ( "block_id" ) );
 
  CREATE TABLE "public"."play_migrate_blocks" ( 
 	"agency_id" Integer NOT NULL,
 	"block_id" Serial NOT NULL,
-	"label" Character Varying( 2044 ) NOT NULL,
+	"name" text NOT NULL,
 	"color" text check (is_valid_css_color(color)),
 	PRIMARY KEY ( "block_id" ) );
 
 CREATE TABLE "public"."migrate_calendars" ( 
 	"agency_id" Integer NOT NULL,
 	"calendar_id" Serial NOT NULL,
-	"label" Character Varying( 2044 ) NOT NULL,
+	"name" Character Varying( 2044 ) NOT NULL,
 	PRIMARY KEY ( "calendar_id" ) );
 
 CREATE TABLE "public"."play_migrate_calendars" ( 
 	"agency_id" Integer NOT NULL,
 	"calendar_id" Serial NOT NULL,
-	"label" Character Varying( 2044 ) NOT NULL,
+	"name" Character Varying( 2044 ) NOT NULL,
 	PRIMARY KEY ( "calendar_id" ) );
 
 CREATE TABLE "public"."migrate_calendar_bounds" ( 
@@ -229,7 +229,7 @@ CREATE TABLE "public"."play_migrate_calendar_bounds" (
 CREATE TABLE "public"."migrate_directions" ( 
 	"direction_id" Serial NOT NULL,
 	"agency_id" Integer,
-	"direction_label" Character Varying( 35 ) NOT NULL,
+	"name" Character Varying( 35 ) NOT NULL,
 	"direction_bool" Integer,
 	"last_modified" Timestamp Without Time Zone DEFAULT now() NOT NULL,
 	PRIMARY KEY ( "direction_id" ) );
@@ -237,7 +237,7 @@ CREATE TABLE "public"."migrate_directions" (
 CREATE TABLE "public"."play_migrate_directions" ( 
 	"direction_id" Serial NOT NULL,
 	"agency_id" Integer,
-	"direction_label" Character Varying( 35 ) NOT NULL,
+	"name" Character Varying( 35 ) NOT NULL,
 	"direction_bool" Integer,
 	"last_modified" Timestamp Without Time Zone DEFAULT now() NOT NULL,
 	PRIMARY KEY ( "direction_id" ) );
@@ -437,7 +437,7 @@ CREATE TABLE "public"."play_migrate_schedules" (
 	"agency_name" Character Varying( 2044 ) NOT NULL,
 	"route_short_name" Character Varying( 2044 ) NOT NULL,
 	"route_long_name" Character Varying( 2044 ) NOT NULL,
-	"direction_label" Character Varying( 2044 ) NOT NULL,
+	"direction_name" Character Varying( 2044 ) NOT NULL,
 	"direction_id" Bigint,
 	"trip_headsign_id" SmallInt,
 	"trip_headsign" Character Varying( 2044 ),
@@ -463,7 +463,7 @@ CREATE TABLE "public"."play_migrate_schedules" (
 	"agency_name" Character Varying( 2044 ) NOT NULL,
 	"route_short_name" Character Varying( 2044 ) NOT NULL,
 	"route_long_name" Character Varying( 2044 ) NOT NULL,
-	"direction_label" Character Varying( 2044 ) NOT NULL,
+	"direction_name" Character Varying( 2044 ) NOT NULL,
 	"direction_id" Bigint,
 	"trip_headsign_id" SmallInt,
 	"trip_headsign" Character Varying( 2044 ),
@@ -545,7 +545,7 @@ CREATE TABLE "public"."migrate_calendar_dates" (
     calendar_date_id SERIAL PRIMARY KEY,
     "date" DATE NOT NULL DEFAULT '0001-01-01',
     agency_id INTEGER,
-    description TEXT,
+    name TEXT,
     last_modified TIMESTAMPTZ DEFAULT now()
 );
 
@@ -553,7 +553,7 @@ CREATE TABLE "public"."play_migrate_calendar_dates" (
     calendar_date_id SERIAL PRIMARY KEY,
     "date" DATE NOT NULL DEFAULT '0001-01-01',
     agency_id INTEGER,
-    description TEXT,
+    name TEXT,
     last_modified TIMESTAMPTZ DEFAULT now()
 );
 

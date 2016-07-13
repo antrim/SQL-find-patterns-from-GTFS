@@ -83,7 +83,7 @@ $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
 $migrate_timed_pattern_stops_nonnormalized_query  = "
 INSERT INTO {$table_prefix}_timed_pattern_stops_nonnormalized 
     (agency_id, agency_name, route_short_name, route_long_name, 
-     direction_label, direction_id, trip_headsign_id, 
+     direction_name, direction_id, trip_headsign_id, 
      trip_headsign, stop_id, stop_order, timed_pattern_id, 
      pattern_id, arrival_time, departure_time, pickup_type, drop_off_type, 
      one_trip, trips_list, stops_pattern, arrival_time_intervals, 
@@ -170,7 +170,7 @@ WITH pattern_time_intervals AS (
 )
 
 SELECT timed_patterns.agency_id, agency.agency_name, routes.route_short_name
-     , routes.route_long_name, directions.direction_label, trips.direction_id
+     , routes.route_long_name, directions.direction_label as direction_name, trips.direction_id
      , headsigns.headsign_id, headsigns.headsign, stop_times.stop_id
      , dense_rank() over (partition by timed_pattern_id order by stop_times.stop_sequence) as stop_order
      , timed_pattern_id
@@ -385,8 +385,8 @@ $result = db_query($migrate_headsigns_query);
 
 $migrate_directions_query  = "
     INSERT INTO {$table_prefix}_directions 
-        (agency_id, direction_id, direction_label)
-    SELECT DISTINCT on (direction_id)  agency_id, direction_id, direction_label
+        (agency_id, direction_id, name)
+    SELECT DISTINCT on (direction_id)  agency_id, direction_id, direction_name
     FROM {$table_prefix}_timed_pattern_stops_nonnormalized
     ORDER BY direction_id, agency_id";
 $result = db_query($migrate_directions_query);
@@ -395,9 +395,9 @@ $result = db_query($migrate_directions_query);
 $migrate_calendar_query  = "
     INSERT into {$table_prefix}_calendars
         (agency_id, calendar_id
-       , label)
+       , name)
     SELECT agency_id, service_schedule_group_id AS calendar_id
-         , service_schedule_group_label AS label 
+         , service_schedule_group_label AS name
     FROM service_schedule_groups
     WHERE agency_id IN ($agency_string) 
           AND service_schedule_group_id IS NOT NULL;";
@@ -416,8 +416,8 @@ $result = db_query($migrate_calendar_bounds_query);
 // blocks
 $migrate_blocks_query  = "
     INSERT into {$table_prefix}_blocks 
-        (agency_id, block_id, label)
-    SELECT DISTINCT agency_id, block_id, block_label 
+        (agency_id, block_id, name)
+    SELECT DISTINCT agency_id, block_id, block_label as name
     FROM blocks
     WHERE agency_id IN ($agency_string) 
           AND block_id IS NOT NULL;";
@@ -569,8 +569,8 @@ $result = db_query($remove_shape_segment_orphans_query);
 
 $calendar_dates_query = "
     INSERT INTO {$table_prefix}_calendar_dates
-        (calendar_date_id, \"date\", agency_id, description, last_modified) 
-    SELECT calendar_date_id, \"date\", agency_id, description, last_modified
+        (calendar_date_id, \"date\", agency_id, name, last_modified) 
+    SELECT calendar_date_id, \"date\", agency_id, description as name, last_modified
     FROM calendar_dates;
   ";
 $result = db_query($calendar_dates_query);
