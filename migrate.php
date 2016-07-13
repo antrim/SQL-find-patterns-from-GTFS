@@ -221,7 +221,7 @@ $migrate_agency_result = db_query($migrate_agency_query);
 
 $migrate_feeds_query  = "
     INSERT INTO {$table_prefix}_feeds
-        (id, feed, contact_email
+        (id, name, contact_email
        , contact_url, license, last_modified)  
     SELECT DISTINCT agency_groups.agency_group_id, group_name AS name, feed_contact_email
                   , feed_contact_url, feed_license, agency_groups.last_modified 
