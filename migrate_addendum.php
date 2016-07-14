@@ -1,4 +1,4 @@
-<html><head><title>migrate.php!</title><head>
+<html><head><title>migrate_addendum.php!</title><head>
 <body>
 <?php
 
