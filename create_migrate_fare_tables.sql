@@ -540,3 +540,28 @@ create table migrate_zones (
 ALTER TABLE migrate_zones OWNER TO trillium_gtfs_group;
     
 
+CREATE TABLE migrate_transfers ( like transfers );
+ALTER TABLE ONLY migrate_transfers
+    ADD CONSTRAINT migrate_transfers_pkey PRIMARY KEY (transfer_id);
+CREATE SEQUENCE migrate_transfers_transfer_id_seq
+    START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
+ALTER TABLE ONLY migrate_transfers 
+    ALTER COLUMN transfer_id 
+    SET DEFAULT nextval('migrate_transfers_transfer_id_seq'::regclass);
+ALTER SEQUENCE migrate_transfers_transfer_id_seq OWNED BY migrate_transfers.transfer_id;
+ALTER TABLE migrate_transfers OWNER TO trillium_gtfs_group;
+
+
+
+CREATE TABLE play_migrate_transfers ( like transfers );
+ALTER TABLE ONLY play_migrate_transfers
+    ADD CONSTRAINT play_migrate_transfers_pkey PRIMARY KEY (transfer_id);
+CREATE SEQUENCE play_migrate_transfers_transfer_id_seq
+    START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
+ALTER TABLE ONLY play_migrate_transfers 
+    ALTER COLUMN transfer_id 
+    SET DEFAULT nextval('play_migrate_transfers_transfer_id_seq'::regclass);
+ALTER SEQUENCE play_migrate_transfers_transfer_id_seq OWNED BY play_migrate_transfers.transfer_id;
+ALTER TABLE play_migrate_transfers OWNER TO trillium_gtfs_group;
+
+
