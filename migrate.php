@@ -464,12 +464,12 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
        INSERT into {$table_prefix}_schedules 
             (agency_id, timed_pattern_id, calendar_id
            , start_time
-           , end_time, headway, block_id
+           , end_time, headway_secs, block_id
            , monday, tuesday, wednesday, thursday, friday, saturday, sunday)
        SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id
             , service_schedule_group_id AS calendar_id
             , views.first_arrival_time_for_trip(trips.trip_id) AS start_time
-            , NULL::INTERVAL as end_time,  NULL::integer as headway, block_id
+            , NULL::INTERVAL as end_time,  NULL::integer as headway_secs, block_id
             , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
             , friday::boolean, saturday::boolean, sunday::boolean 
        FROM trips 
@@ -483,12 +483,12 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
              AND views.first_arrival_time_for_trip(trips.trip_id) IS NOT NULL 
        GROUP BY trips.agency_id, timed_pattern_id, calendar_id
               , trips.trip_id, end_time
-              , headway, block_id, monday, tuesday, wednesday, thursday
+              , headway_secs, block_id, monday, tuesday, wednesday, thursday
               , friday, saturday, sunday
    UNION
        SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id
             , service_schedule_group_id AS calendar_id, trips.trip_start_time::INTERVAL AS start_time
-            , NULL::INTERVAL as end_time, NULL::INTEGER as headway, block_id
+            , NULL::INTERVAL as end_time, NULL::INTEGER as headway_secs, block_id
             , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
             , friday::boolean, saturday::boolean, sunday::boolean 
        FROM trips 
@@ -502,7 +502,8 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
    UNION
        SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id
             , service_schedule_group_id AS calendar_id, frequencies.start_time::INTERVAL AS start_time
-            , frequencies.end_time::INTERVAL as end_time, frequencies.headway_secs::text::interval AS headway, block_id
+            , frequencies.end_time::INTERVAL as end_time, frequencies.headway_secs 
+            , block_id
             , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
             , friday::boolean, saturday::boolean, sunday::boolean 
        FROM frequencies 
