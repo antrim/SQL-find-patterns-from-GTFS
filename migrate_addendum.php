@@ -102,5 +102,8 @@ where generated_names.pattern_id = {$table_prefix}_patterns.pattern_id
 $result = db_query($pattern_names_method_beta_query);
 
 
+echo "<br / >\n" . "Migration addendum successful.";
 
+?>
+</body></html>
 

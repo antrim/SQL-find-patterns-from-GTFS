@@ -750,7 +750,7 @@ $result = db_query($restart_transfers_sequence);
 
 
 
-echo "<br / >\n" . "Migration successful."
+echo "<br / >\n" . "Migration successful.";
 
 ?>
 </body></html>
