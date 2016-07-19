@@ -84,11 +84,15 @@ join
   , case when pattern_id = primary_pattern_id 
         then 'Primary' 
         else case when (n_added_stops > 3 or n_added_stops = 0)
-                 then '+ ' || n_added_stops || ' stops'
-                 else '+ ' || (select string_agg(name, ' + ') from  {$table_prefix}_stops where stop_id   in (select unnest(added_stop_ids))) end
+                 then '+ '  || n_added_stops || ' stops'
+                 else '+ '  || (SELECT string_agg(name, ' + ')
+                                FROM  {$table_prefix}_stops 
+                                WHERE stop_id  IN (SELECT unnest(added_stop_ids))) END
           || case when (n_removed_stops > 3 or n_removed_stops = 0)
                  then ' - ' || n_removed_stops || ' stops'
-                 else ' - ' || (select string_agg(name, ' - ') from  {$table_prefix}_stops where stop_id   in (select unnest(removed_stop_ids))) end
+                 else ' - ' || (SELECT string_agg(name, ' - ') 
+                                FROM  {$table_prefix}_stops 
+                                WHERE stop_id  IN (SELECT unnest(removed_stop_ids))) END
         end
    as generated_name
 from patterns_with_stops_difference
