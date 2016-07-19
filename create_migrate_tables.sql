@@ -290,7 +290,7 @@ CREATE TABLE "public"."play_migrate_headsigns" (
 CREATE TABLE "public"."migrate_schedules" ( 
 	"timed_pattern_id" Integer NOT NULL,
 	"calendar_id" Integer NOT NULL,
-	"headway" Integer,
+	"headway" Interval,
 	"block_id" Integer,
 	"agency_id" Integer NOT NULL,
 	"start_time" Interval NOT NULL,
@@ -308,7 +308,7 @@ CREATE TABLE "public"."migrate_schedules" (
 CREATE TABLE "public"."play_migrate_schedules" ( 
 	"timed_pattern_id" Integer NOT NULL,
 	"calendar_id" Integer NOT NULL,
-	"headway" Integer,
+	"headway" Interval,
 	"block_id" Integer,
 	"agency_id" Integer NOT NULL,
 	"start_time" Interval NOT NULL,
