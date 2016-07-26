@@ -24,24 +24,24 @@ pattern_stop_summary AS
     count(*) AS number_of_stops, 
     min(stop_order) AS min_stop_order, 
     max(stop_order) AS max_stop_order 
-  FROM {$table_prefix}_pattern_stops 
+  FROM {$table_prefix}.pattern_stops 
   GROUP BY pattern_id), 
 
 generated_names AS 
 ( SELECT p.pattern_id
   , s1.name || ' to ' || sN.name || ' x' || number_of_stops AS generated_name
-  FROM {$table_prefix}_patterns p
+  FROM {$table_prefix}.patterns p
   JOIN pattern_stop_summary ps using(pattern_id) 
-  JOIN {$table_prefix}_pattern_stops ps1
+  JOIN {$table_prefix}.pattern_stops ps1
        ON (ps1.pattern_id = p.pattern_id AND ps1.stop_order = min_stop_order) 
-  JOIN {$table_prefix}_pattern_stops psN
+  JOIN {$table_prefix}.pattern_stops psN
        ON (psN.pattern_id = p.pattern_id AND psN.stop_order = max_stop_order) 
   JOIN stops s1 ON (s1.stop_id = ps1.stop_id)
   JOIN stops sN ON (sN.stop_id = psN.stop_id))
 
 UPDATE ${table_prefix}_patterns SET name = generated_name 
 FROM generated_names
-WHERE generated_names.pattern_id = {$table_prefix}_patterns.pattern_id;
+WHERE generated_names.pattern_id = {$table_prefix}.patterns.pattern_id;
     ";
 
 
@@ -63,16 +63,16 @@ patterns_with_stops_difference AS
   , s_agg.stop_ids - primary_s_agg.primary_stop_ids as added_stop_ids
   , primary_s_agg.primary_stop_ids - s_agg.stop_ids as removed_stop_ids
   , s_agg.stop_ids
-from {$table_prefix}_patterns p
-join views.{$table_prefix}_route_primary_patterns using (route_id, direction_id)
+from {$table_prefix}.patterns p
+join views.{$table_prefix}.route_primary_patterns using (route_id, direction_id)
 join
     ( select pattern_id, array_agg(stop_id order by stop_id) stop_ids
-      from {$table_prefix}_pattern_stops group by pattern_id) s_agg
+      from {$table_prefix}.pattern_stops group by pattern_id) s_agg
     using (pattern_id)
 join
     ( select pattern_id, array_agg(stop_id order by stop_id) primary_stop_ids
-      from {$table_prefix}_pattern_stops group by pattern_id) primary_s_agg
-    on (primary_s_agg.pattern_id = {$table_prefix}_route_primary_patterns.primary_pattern_id)  )
+      from {$table_prefix}.pattern_stops group by pattern_id) primary_s_agg
+    on (primary_s_agg.pattern_id = {$table_prefix}.route_primary_patterns.primary_pattern_id)  )
 
 ,generated_names AS
 (select
@@ -86,21 +86,21 @@ join
         else case when (n_added_stops > 3 or n_added_stops = 0)
                  then '+ '  || n_added_stops || ' stops'
                  else '+ '  || (SELECT string_agg(name, ' + ')
-                                FROM  {$table_prefix}_stops 
+                                FROM  {$table_prefix}.stops 
                                 WHERE stop_id  IN (SELECT unnest(added_stop_ids))) END
           || case when (n_removed_stops > 3 or n_removed_stops = 0)
                  then ' - ' || n_removed_stops || ' stops'
                  else ' - ' || (SELECT string_agg(name, ' - ') 
-                                FROM  {$table_prefix}_stops 
+                                FROM  {$table_prefix}.stops 
                                 WHERE stop_id  IN (SELECT unnest(removed_stop_ids))) END
         end
    as generated_name
 from patterns_with_stops_difference
 order by route_id, pattern_id)
 
-update {$table_prefix}_patterns SET name = generated_name
+update {$table_prefix}.patterns SET name = generated_name
 from generated_names
-where generated_names.pattern_id = {$table_prefix}_patterns.pattern_id
+where generated_names.pattern_id = {$table_prefix}.patterns.pattern_id
     ";
 
 $result = db_query($pattern_names_method_beta_query);

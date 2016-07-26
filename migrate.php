@@ -53,36 +53,36 @@ echo "<br />\n agency_string $agency_string";
 // ALTER SEQUENCE play_migrate_blocks_block_id_seq OWNER TO trillium_gtfs_group ;
 
 $truncate_migrate_tables_query = "
-    TRUNCATE {$table_prefix}_agencies
-           , {$table_prefix}_blocks
-           , {$table_prefix}_calendar_bounds
-           , {$table_prefix}_calendar_dates
-           , {$table_prefix}_calendar_date_service_exceptions
-           , {$table_prefix}_calendars
-           , {$table_prefix}_directions
-           , {$table_prefix}_fare_attributes
-           , {$table_prefix}_fare_rider_categories
-           , {$table_prefix}_fare_rules
-           , {$table_prefix}_feeds
-           , {$table_prefix}_headsigns
-           , {$table_prefix}_pattern_custom_shape_segments
-           , {$table_prefix}_patterns
-           , {$table_prefix}_pattern_stops
-           , {$table_prefix}_routes
-           , {$table_prefix}_schedules
-           , {$table_prefix}_shape_segments
-           , {$table_prefix}_stops
-           , {$table_prefix}_timed_patterns
-           , {$table_prefix}_timed_pattern_stops
-           , {$table_prefix}_timed_pattern_stops_nonnormalized
-           , {$table_prefix}_transfers
-           , {$table_prefix}_zones
+    TRUNCATE {$table_prefix}.agencies
+           , {$table_prefix}.blocks
+           , {$table_prefix}.calendar_bounds
+           , {$table_prefix}.calendar_dates
+           , {$table_prefix}.calendar_date_service_exceptions
+           , {$table_prefix}.calendars
+           , {$table_prefix}.directions
+           , {$table_prefix}.fare_attributes
+           , {$table_prefix}.fare_rider_categories
+           , {$table_prefix}.fare_rules
+           , {$table_prefix}.feeds
+           , {$table_prefix}.headsigns
+           , {$table_prefix}.pattern_custom_shape_segments
+           , {$table_prefix}.patterns
+           , {$table_prefix}.pattern_stops
+           , {$table_prefix}.routes
+           , {$table_prefix}.schedules
+           , {$table_prefix}.shape_segments
+           , {$table_prefix}.stops
+           , {$table_prefix}.timed_patterns
+           , {$table_prefix}.timed_pattern_stops
+           , {$table_prefix}.timed_pattern_stops_nonnormalized
+           , {$table_prefix}.transfers
+           , {$table_prefix}.zones
              RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
 
 $migrate_timed_pattern_stops_nonnormalized_query  = "
-INSERT INTO {$table_prefix}_timed_pattern_stops_nonnormalized 
+INSERT INTO {$table_prefix}.timed_pattern_stops_nonnormalized 
     (agency_id, agency_name, route_short_name, route_long_name, 
      direction_name, direction_id, trip_headsign_id, 
      trip_headsign, stop_id, stop_order, timed_pattern_id, 
@@ -205,7 +205,7 @@ $migrate_timed_pattern_stops_nonnormalized_result = db_query($migrate_timed_patt
 echo "<br />\n" . $migrate_timed_pattern_stops_nonnormalized_query;
 
 $migrate_agency_query  = "
-    INSERT INTO {$table_prefix}_agencies
+    INSERT INTO {$table_prefix}.agencies
         (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id
        , agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info
        , query_tracking, last_modified, maintenance_start, gtfs_plus
@@ -221,7 +221,7 @@ $migrate_agency_query  = "
 $migrate_agency_result = db_query($migrate_agency_query);
 
 $migrate_feeds_query  = "
-    INSERT INTO {$table_prefix}_feeds
+    INSERT INTO {$table_prefix}.feeds
         (id, name, contact_email
        , contact_url, license, last_modified)  
     SELECT DISTINCT agency_groups.agency_group_id, group_name AS name, feed_contact_email
@@ -236,7 +236,7 @@ echo "<br />\n" . "\n\n".$migrate_feeds_query."\n\n";
 
 
 $migrate_zones_query = "
-    INSERT INTO {$table_prefix}_zones
+    INSERT INTO {$table_prefix}.zones
           (zone_id, name, agency_id
          , last_modified, zone_id_import )
     SELECT zone_id, zone_name AS name, agency_id
@@ -247,7 +247,7 @@ $result = db_query($migrate_zones_query);
 
 
 $all_zones_wildcard_query = "
-    INSERT INTO {$table_prefix}_zones
+    INSERT INTO {$table_prefix}.zones
           (zone_id, name, agency_id
          , last_modified, zone_id_import )
     VALUES (-411
@@ -261,12 +261,12 @@ $result = db_query($all_zones_wildcard_query);
 
 $get_least_unused_zone_id = "
     SELECT 1 + MAX(zone_id)
-    FROM {$table_prefix}_zones";
+    FROM {$table_prefix}.zones";
 $result = db_query($get_least_unused_zone_id);
 $least_unused_zone_id = db_fetch_array($result)[0];
 echo "<br />\n least_unused_zone_id $least_unused_zone_id";
 $restart_zones_sequence = "
-    ALTER SEQUENCE {$table_prefix}_zones_zone_id_seq 
+    ALTER SEQUENCE {$table_prefix}.zones_zone_id_seq 
     RESTART WITH $least_unused_zone_id
     ";
 $result = db_query($restart_zones_sequence);
@@ -274,34 +274,34 @@ $result = db_query($restart_zones_sequence);
 
 // pattern_stop.sql
 $migrate_pattern_stop_query  = "
-    INSERT into {$table_prefix}_pattern_stops
+    INSERT into {$table_prefix}.pattern_stops
     SELECT DISTINCT  agency_id, pattern_id, stop_order, stop_id 
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized
+    FROM {$table_prefix}.timed_pattern_stops_nonnormalized
     ORDER BY agency_id, pattern_id, stop_order";
 $result = db_query($migrate_pattern_stop_query);
 
 // timed_pattern_intervals.sql
 $migrate_timed_pattern_stop_query  = "
-    INSERT into {$table_prefix}_timed_pattern_stops 
+    INSERT into {$table_prefix}.timed_pattern_stops 
         (agency_id, timed_pattern_id, stop_order, arrival_time, departure_time
        , pickup_type, drop_off_type, headsign_id)
     SELECT DISTINCT agency_id, timed_pattern_id, stop_order, arrival_time, departure_time
                   , pickup_type, drop_off_type, stop_headsign_id
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized
+    FROM {$table_prefix}.timed_pattern_stops_nonnormalized
     ORDER BY agency_id, timed_pattern_id, stop_order";
 $result = db_query($migrate_timed_pattern_stop_query);
 
 // timed_pattern.sql
 $migrate_timed_pattern_query  = "
-    INSERT into {$table_prefix}_timed_patterns (agency_id, timed_pattern_id, pattern_id)
+    INSERT into {$table_prefix}.timed_patterns (agency_id, timed_pattern_id, pattern_id)
     SELECT DISTINCT agency_id, timed_pattern_id, pattern_id
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized
+    FROM {$table_prefix}.timed_pattern_stops_nonnormalized
     ORDER BY agency_id, pattern_id, timed_pattern_id";
 $result = db_query($migrate_timed_pattern_query);
 
 // routes.sql
 $migrate_routes_stop_query  = "
-    INSERT INTO {$table_prefix}_routes 
+    INSERT INTO {$table_prefix}.routes 
         (agency_id, route_id, route_short_name, route_long_name, route_desc, route_type
        , route_color, route_text_color, route_url, route_bikes_allowed, route_id_import
        , last_modified, route_sort_order, hidden) 
@@ -327,7 +327,7 @@ $result = db_query($migrate_routes_stop_query);
 
 /*
 $all_routes_wildcard_query = "
-    INSERT INTO {$table_prefix}_routes
+    INSERT INTO {$table_prefix}.routes
         (agency_id, route_id, route_short_name, route_long_name,
         , route_desc, route_type
          , last_modified, zone_id_import )
@@ -347,9 +347,9 @@ $result = db_query($all_routes_wildcard_query);
 // some patterns may be used by multiple routes/directions!!!!
 // one way to test this is: SELECT DISTINCT ON (pattern_id) agency_id, pattern_id, route_id, direction_id
 $migrate_pattern_query  = "
-    INSERT into {$table_prefix}_patterns (agency_id, pattern_id, route_id, direction_id)
+    INSERT into {$table_prefix}.patterns (agency_id, pattern_id, route_id, direction_id)
     SELECT DISTINCT agency_id, pattern_id, route_id, direction_id
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized
+    FROM {$table_prefix}.timed_pattern_stops_nonnormalized
     ORDER BY  pattern_id, agency_id, route_id, direction_id";
 $result = db_query($migrate_pattern_query);
 
@@ -360,7 +360,7 @@ $result = db_query($migrate_pattern_query);
 
 // SELECT count(distinct agency_id), pattern_id, count(distinct route_id) as 
 // route_count, count(distinct direction_id) as direction_count
-// FROM {$table_prefix}_timed_pattern_stops_nonnormalized
+// FROM {$table_prefix}.timed_pattern_stops_nonnormalized
 // group by pattern_id
 // ORDER BY route_count DESC, direction_count DESC
 
@@ -368,14 +368,14 @@ $result = db_query($migrate_pattern_query);
 // ALERT! There are some null headsigns to look into here.
 
 $migrate_headsigns_query  = "
-    INSERT into {$table_prefix}_headsigns (agency_id, headsign_id, headsign)
+    INSERT into {$table_prefix}.headsigns (agency_id, headsign_id, headsign)
     SELECT DISTINCT  agency_id, trip_headsign_id as headsign_id, trip_headsign AS headsign
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized 
+    FROM {$table_prefix}.timed_pattern_stops_nonnormalized 
     WHERE trip_headsign_id IS NOT NULL 
           AND trip_headsign IS NOT NULL
     UNION
     SELECT DISTINCT  agency_id, stop_headsign_id as headsign_id, stop_headsign AS headsign
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized 
+    FROM {$table_prefix}.timed_pattern_stops_nonnormalized 
     WHERE stop_headsign_id IS NOT NULL 
           AND stop_headsign IS NOT NULL
     ORDER BY agency_id, headsign_id";
@@ -385,16 +385,16 @@ $result = db_query($migrate_headsigns_query);
 // ALERT!! There are some duplicate direction_id values to look ingo
 
 $migrate_directions_query  = "
-    INSERT INTO {$table_prefix}_directions 
+    INSERT INTO {$table_prefix}.directions 
         (agency_id, direction_id, name)
     SELECT DISTINCT on (direction_id)  agency_id, direction_id, direction_name
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized
+    FROM {$table_prefix}.timed_pattern_stops_nonnormalized
     ORDER BY direction_id, agency_id";
 $result = db_query($migrate_directions_query);
 
 // calendar
 $migrate_calendar_query  = "
-    INSERT into {$table_prefix}_calendars
+    INSERT into {$table_prefix}.calendars
         (agency_id, calendar_id
        , name)
     SELECT agency_id, service_schedule_group_id AS calendar_id
@@ -406,7 +406,7 @@ $result = db_query($migrate_calendar_query);
 
 // calendar
 $migrate_calendar_bounds_query  = "
-    INSERT into {$table_prefix}_calendar_bounds 
+    INSERT into {$table_prefix}.calendar_bounds 
         (agency_id, calendar_id, start_date, end_date)
     SELECT agency_id, service_schedule_group_id as calendar_id, start_date, end_date 
     FROM service_schedule_bounds
@@ -416,7 +416,7 @@ $result = db_query($migrate_calendar_bounds_query);
 
 // blocks
 $migrate_blocks_query  = "
-    INSERT into {$table_prefix}_blocks 
+    INSERT into {$table_prefix}.blocks 
         (agency_id, block_id, name)
     SELECT DISTINCT agency_id, block_id, block_label as name
     FROM blocks
@@ -426,7 +426,7 @@ $result = db_query($migrate_blocks_query);
 
 // stops
 $migrate_stops_query  = "
-    INSERT into {$table_prefix}_stops 
+    INSERT into {$table_prefix}.stops 
         (agency_id, stop_id, stop_code, platform_code, location_type
         , parent_station, name, stop_desc, stop_comments, point
         , zone_id
@@ -453,7 +453,7 @@ $result = db_query($migrate_stops_query);
 
 $patterns_nonnormalized_query = "
     SELECT DISTINCT timed_pattern_id, agency_id, trips_list 
-    FROM {$table_prefix}_timed_pattern_stops_nonnormalized;";
+    FROM {$table_prefix}.timed_pattern_stops_nonnormalized;";
 $patterns_nonnormalized_result   = db_query($patterns_nonnormalized_query);
   
 while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
@@ -462,7 +462,7 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
     $trips_list = $row['trips_list'];
 
     $schedule_insert_query = "
-       INSERT into {$table_prefix}_schedules 
+       INSERT into {$table_prefix}.schedules 
             (agency_id, timed_pattern_id, calendar_id
            , start_time
            , end_time, headway_secs, block_id
@@ -540,7 +540,7 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
 // for every group of segments with the same (to_stop_id, from_stop_id) pair!
 // "Older" segments are not used by GTFSManager anyhow.
 $migrate_shape_segments_query  = "
-    INSERT into {$table_prefix}_shape_segments 
+    INSERT into {$table_prefix}.shape_segments 
         (from_stop_id, to_stop_id
        , last_modified
        , linestring )
@@ -563,14 +563,14 @@ $migrate_shape_segments_query  = "
 $result = db_query($migrate_shape_segments_query);
 
 $remove_shape_segment_orphans_query = "
-    DELETE FROM {$table_prefix}_shape_segments 
-    WHERE from_stop_id NOT IN (SELECT stop_id FROM {$table_prefix}_stops) 
-          OR to_stop_id NOT IN (SELECT stop_id FROM {$table_prefix}_stops);
+    DELETE FROM {$table_prefix}.shape_segments 
+    WHERE from_stop_id NOT IN (SELECT stop_id FROM {$table_prefix}.stops) 
+          OR to_stop_id NOT IN (SELECT stop_id FROM {$table_prefix}.stops);
     ";
 $result = db_query($remove_shape_segment_orphans_query);
 
 $calendar_dates_query = "
-    INSERT INTO {$table_prefix}_calendar_dates
+    INSERT INTO {$table_prefix}.calendar_dates
         (calendar_date_id, \"date\", agency_id, name, last_modified) 
     SELECT calendar_date_id, \"date\", agency_id, description as name, last_modified
     FROM calendar_dates;
@@ -579,18 +579,18 @@ $result = db_query($calendar_dates_query);
 
 $get_least_unused_calendar_date_id = "
     SELECT 1 + MAX(calendar_date_id)
-    FROM {$table_prefix}_calendar_dates";
+    FROM {$table_prefix}.calendar_dates";
 $result = db_query($get_least_unused_calendar_date_id);
 $least_unused_calendar_date_id = db_fetch_array($result)[0];
 echo "<br />\n least_unused_calendar_date_id $least_unused_calendar_date_id";
 $restart_calendar_date_sequence = "
-    ALTER SEQUENCE {$table_prefix}_calendar_dates_calendar_date_id_seq 
+    ALTER SEQUENCE {$table_prefix}.calendar_dates_calendar_date_id_seq 
     RESTART WITH $least_unused_calendar_date_id
     ";
 $result = db_query($restart_calendar_date_sequence);
 
 $calendar_date_service_exceptions_query = "
-    INSERT INTO {$table_prefix}_calendar_date_service_exceptions
+    INSERT INTO {$table_prefix}.calendar_date_service_exceptions
         (calendar_date_id, exception_type, calendar_id
        , monday, tuesday , wednesday
        , thursday, friday, saturday, sunday
@@ -608,7 +608,7 @@ $calendar_date_service_exceptions_query = "
 $result = db_query($calendar_date_service_exceptions_query);
 
 $migrate_fare_attributes_query = "
-    INSERT INTO {$table_prefix}_fare_attributes
+    INSERT INTO {$table_prefix}.fare_attributes
         (agency_id, fare_id, price, currency_type, payment_method
        , transfers, transfer_duration, last_modified, fare_id_import)
     SELECT agency_id, fare_id, price, currency_type, payment_method
@@ -618,19 +618,19 @@ $result = db_query($migrate_fare_attributes_query);
 
 $get_least_unused_fare_id = "
     SELECT 1 + MAX(fare_id)
-    FROM {$table_prefix}_fare_attributes";
+    FROM {$table_prefix}.fare_attributes";
 $result = db_query($get_least_unused_fare_id);
 $least_unused_fare_id = db_fetch_array($result)[0];
 echo "<br />\n least_unused_fare_attributes_id $least_unused_fare_id";
 $restart_fare_attributes_sequence = "
-    ALTER SEQUENCE {$table_prefix}_fare_attributes_fare_id_seq 
+    ALTER SEQUENCE {$table_prefix}.fare_attributes_fare_id_seq 
     RESTART WITH $least_unused_fare_id
     ";
 $result = db_query($restart_fare_attributes_sequence);
 
 
 $migrate_fare_rider_categories_query = "
-    INSERT INTO {$table_prefix}_fare_rider_categories
+    INSERT INTO {$table_prefix}.fare_rider_categories
         (fare_rider_category_id, fare_id, rider_category_custom_id 
        , price, agency_id) 
     SELECT fare_rider_category_id, fare_id, rider_category_custom_id 
@@ -640,12 +640,12 @@ $result = db_query($migrate_fare_rider_categories_query);
 
 $get_least_unused_fare_rider_category_id = "
     SELECT 1 + MAX(fare_rider_category_id)
-    FROM {$table_prefix}_fare_rider_categories";
+    FROM {$table_prefix}.fare_rider_categories";
 $result = db_query($get_least_unused_fare_rider_category_id);
 $least_unused_fare_rider_category_id = db_fetch_array($result)[0];
 echo "<br />\n least_unused_fare_rider_category_id $least_unused_fare_rider_category_id";
 $restart_fare_rider_categories_sequence = "
-    ALTER SEQUENCE {$table_prefix}_fare_rider_categories_fare_rider_category_id_seq 
+    ALTER SEQUENCE {$table_prefix}.fare_rider_categories_fare_rider_category_id_seq 
     RESTART WITH $least_unused_fare_rider_category_id
     ";
 $result = db_query($restart_fare_rider_categories_sequence);
@@ -657,7 +657,7 @@ $migrate_fare_rules_query = "
              , array_agg(fare_rule_id) AS fare_rule_id_agg, count(*)
         FROM fare_rules
         GROUP BY agency_id, fare_id, route_id, origin_id, destination_id, contains_id)
-    INSERT INTO {$table_prefix}_fare_rules 
+    INSERT INTO {$table_prefix}.fare_rules 
         (fare_rule_id, fare_id, route_id, origin_id
        , destination_id, contains_id, agency_id
        , last_modified, fare_id_import, route_id_import
@@ -673,17 +673,17 @@ $migrate_fare_rules_query = "
     WHERE fare_rule_id IN (SELECT golden_fare_rule_id 
                            FROM distinct_fare_rules)
           AND (origin_id IS NULL 
-               OR origin_id IN (SELECT zone_id FROM {$table_prefix}_zones))
+               OR origin_id IN (SELECT zone_id FROM {$table_prefix}.zones))
           AND (destination_id IS NULL 
-               OR destination_id IN (SELECT zone_id FROM {$table_prefix}_zones))
+               OR destination_id IN (SELECT zone_id FROM {$table_prefix}.zones))
           AND (contains_id IS NULL 
-               OR contains_id IN (SELECT zone_id FROM {$table_prefix}_zones))
+               OR contains_id IN (SELECT zone_id FROM {$table_prefix}.zones))
         ; ";
 $result = db_query($migrate_fare_rules_query);
 
 
 $fare_rules_combinable_query = "
-    UPDATE {$table_prefix}_fare_rules
+    UPDATE {$table_prefix}.fare_rules
         SET is_combinable = False 
     WHERE agency_id IN (42, 175)
           OR (agency_id = (19) 
@@ -698,18 +698,18 @@ echo '\n <br/ >' .  $migrate_fare_rules_query;
 
 $get_least_unused_fare_rule_id = "
     SELECT 1 + MAX(fare_rule_id)
-    FROM {$table_prefix}_fare_rules";
+    FROM {$table_prefix}.fare_rules";
 $result = db_query($get_least_unused_fare_rule_id);
 $least_unused_fare_rule_id = db_fetch_array($result)[0];
 echo "<br />\n least_unused_fare_rule_id $least_unused_fare_rule_id";
 $restart_fare_rules_sequence = "
-    ALTER SEQUENCE {$table_prefix}_fare_rules_fare_rule_id_seq 
+    ALTER SEQUENCE {$table_prefix}.fare_rules_fare_rule_id_seq 
     RESTART WITH $least_unused_fare_rule_id
     ";
 $result = db_query($restart_fare_rules_sequence);
 
 $migrate_transfers_query = "
-    INSERT INTO {$table_prefix}_transfers
+    INSERT INTO {$table_prefix}.transfers
       ( transfer_id,
         from_stop_id,
         to_stop_id,
@@ -738,12 +738,12 @@ $result = db_query($migrate_transfers_query);
 
 $get_least_unused_transfer_id = "
     SELECT 1 + MAX(transfer_id)
-    FROM {$table_prefix}_transfers";
+    FROM {$table_prefix}.transfers";
 $result = db_query($get_least_unused_transfer_id);
 $least_unused_transfer_id = db_fetch_array($result)[0];
 echo "<br />\n least_unused_transfer_id $least_unused_transfer_id";
 $restart_transfers_sequence = "
-    ALTER SEQUENCE {$table_prefix}_transfers_transfer_id_seq 
+    ALTER SEQUENCE {$table_prefix}.transfers_transfer_id_seq 
     RESTART WITH $least_unused_transfer_id
     ";
 $result = db_query($restart_transfers_sequence);
