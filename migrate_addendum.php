@@ -64,7 +64,7 @@ patterns_with_stops_difference AS
   , primary_s_agg.primary_stop_ids - s_agg.stop_ids as removed_stop_ids
   , s_agg.stop_ids
 from {$table_prefix}.patterns p
-join views.{$table_prefix}.route_primary_patterns using (route_id, direction_id)
+join views.{$table_prefix}_route_primary_patterns using (route_id, direction_id)
 join
     ( select pattern_id, array_agg(stop_id order by stop_id) stop_ids
       from {$table_prefix}.pattern_stops group by pattern_id) s_agg
