@@ -69,7 +69,7 @@ $truncate_migrate_tables_query = "
            , {$table_prefix}.patterns
            , {$table_prefix}.pattern_stops
            , {$table_prefix}.routes
-           , {$table_prefix}.schedules
+           , {$table_prefix}.trips
            , {$table_prefix}.shape_segments
            , {$table_prefix}.stops
            , {$table_prefix}.timed_patterns
@@ -463,7 +463,7 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
     $trips_list = $row['trips_list'];
 
     $schedule_insert_query = "
-       INSERT into {$table_prefix}.schedules 
+       INSERT into {$table_prefix}.trips
             (agency_id, timed_pattern_id, calendar_id
            , start_time
            , end_time, headway_secs, block_id
