@@ -429,7 +429,7 @@ $migrate_stops_query  = "
     INSERT into {$table_prefix}.stops 
         (agency_id, stop_id, stop_code, platform_code, location_type
         , parent_station, name, stop_desc, stop_comments, point
-        , zone_id,
+        , zone_id
         , city, direction_id, url, publish_status, timezone
     )
    SELECT s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
