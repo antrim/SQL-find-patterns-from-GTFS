@@ -429,8 +429,9 @@ $migrate_stops_query  = "
     INSERT into {$table_prefix}.stops 
         (agency_id, stop_id, stop_code, platform_code, location_type
         , parent_station, name, stop_desc, stop_comments, point
-        , zone_id
-        , city, direction_id, url, publish_status, timezone)
+        , zone_id,
+        , city, direction_id, url, publish_status, timezone
+    )
    SELECT s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
         , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments, s.geom::GEOGRAPHY as point
 
@@ -466,13 +467,15 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
             (agency_id, timed_pattern_id, calendar_id
            , start_time
            , end_time, headway_secs, block_id
-           , monday, tuesday, wednesday, thursday, friday, saturday, sunday)
+           , monday, tuesday, wednesday, thursday, friday, saturday, sunday
+           , in_seat_transfer)
        SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id
             , service_schedule_group_id AS calendar_id
             , views.first_arrival_time_for_trip(trips.trip_id) AS start_time
             , NULL::INTERVAL as end_time,  NULL::integer as headway_secs, block_id
             , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
             , friday::boolean, saturday::boolean, sunday::boolean 
+            , in_seat_transfer 
        FROM trips 
        INNER JOIN calendar 
           ON trips.service_id = calendar.calendar_id 
@@ -492,6 +495,7 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
             , NULL::INTERVAL as end_time, NULL::INTEGER as headway_secs, block_id
             , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
             , friday::boolean, saturday::boolean, sunday::boolean 
+            , in_seat_transfer 
        FROM trips 
        INNER JOIN calendar 
                ON trips.service_id = calendar.calendar_id 
@@ -507,6 +511,7 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
             , block_id
             , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
             , friday::boolean, saturday::boolean, sunday::boolean 
+            , in_seat_transfer 
        FROM frequencies 
        INNER JOIN trips 
                ON frequencies.trip_id = trips.trip_id 
@@ -521,6 +526,7 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
             , frequencies.end_time::INTERVAL as end_time, frequencies.headway_secs AS headway, block_id
             , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
             , friday::boolean, saturday::boolean, sunday::boolean 
+            , in_seat_transfer 
        FROM frequencies 
        INNER JOIN trips 
                ON frequencies.trip_id = trips.trip_id 
