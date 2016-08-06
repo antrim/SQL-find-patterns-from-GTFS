@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+// first, "npm install randomcolor"
 random_color = require('randomcolor');
 
 console.log( "\"color\"" );
