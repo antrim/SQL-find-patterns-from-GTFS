@@ -106,6 +106,14 @@ where generated_names.pattern_id = {$table_prefix}.patterns.pattern_id
 $result = db_query($pattern_names_method_beta_query);
 
 
+
+$block_colors_query = "
+    update ${table_prefix}.blocks blocks 
+    set color = sample_colors.color 
+    from ${table_prefix}.sample_colors where sample_colors.color_id = blocks.block_id;
+";
+
+
 echo "<br / >\n" . "Migration addendum successful.";
 
 ?>
