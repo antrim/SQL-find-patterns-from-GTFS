@@ -118,9 +118,9 @@ $result = db_query($block_colors_query);
 // HACK HACK HACK. this needs to be replaced by feed_id code. 
 // ED 2016-08-06
 $stops_agency_groups_query = "
-    update stops 
+    update ${table_prefix}.stops 
         set agency_group_id = agency_group_assoc.agency_group_id 
-    from agency_group_assoc 
+    from ${table_prefix}.agency_group_assoc 
     where stops.agency_id = agency_group_assoc.agency_id;
 ";
 $result = db_query($stops_agency_groups_query);
