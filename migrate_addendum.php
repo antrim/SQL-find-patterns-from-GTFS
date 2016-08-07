@@ -22,8 +22,8 @@ pattern_stop_summary AS
 ( SELECT 
     pattern_id, 
     count(*) AS number_of_stops, 
-    min(stop_order) AS min_stop_order, 
-    max(stop_order) AS max_stop_order 
+    min(\"stop_order\") AS min_stop_order, 
+    max(\"stop_order\") AS max_stop_order 
   FROM {$table_prefix}.pattern_stops 
   GROUP BY pattern_id), 
 
@@ -33,9 +33,9 @@ generated_names AS
   FROM {$table_prefix}.patterns p
   JOIN pattern_stop_summary ps using(pattern_id) 
   JOIN {$table_prefix}.pattern_stops ps1
-       ON (ps1.pattern_id = p.pattern_id AND ps1.stop_order = min_stop_order) 
+       ON (ps1.pattern_id = p.pattern_id AND ps1.\"stop_order\" = min_stop_order) 
   JOIN {$table_prefix}.pattern_stops psN
-       ON (psN.pattern_id = p.pattern_id AND psN.stop_order = max_stop_order) 
+       ON (psN.pattern_id = p.pattern_id AND psN.\"stop_order\" = max_stop_order) 
   JOIN stops s1 ON (s1.stop_id = ps1.stop_id)
   JOIN stops sN ON (sN.stop_id = psN.stop_id))
 
@@ -64,7 +64,7 @@ patterns_with_stops_difference AS
   , primary_s_agg.primary_stop_ids - s_agg.stop_ids as removed_stop_ids
   , s_agg.stop_ids
 from {$table_prefix}.patterns p
-join views.{$table_prefix}_route_primary_patterns AS route_primary_patterns using (route_id, direction_id)
+join {$table_prefix}.route_primary_patterns AS route_primary_patterns using (route_id, direction_id)
 join
     ( select pattern_id, array_agg(stop_id order by stop_id) stop_ids
       from {$table_prefix}.pattern_stops group by pattern_id) s_agg
@@ -112,6 +112,18 @@ $block_colors_query = "
     set color = sample_colors.color 
     from ${table_prefix}.sample_colors where sample_colors.color_id = blocks.block_id;
 ";
+$result = db_query($block_colors_query);
+
+
+// HACK HACK HACK. this needs to be replaced by feed_id code. 
+// ED 2016-08-06
+$stops_agency_groups_query = "
+    update stops 
+        set agency_group_id = agency_group_assoc.agency_group_id 
+    from agency_group_assoc 
+    where stops.agency_id = agency_group_assoc.agency_id;
+";
+$result = db_query($stops_agency_groups_query);
 
 
 echo "<br / >\n" . "Migration addendum successful.";

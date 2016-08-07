@@ -85,7 +85,7 @@ $migrate_timed_pattern_stops_nonnormalized_query  = "
 INSERT INTO {$table_prefix}.timed_pattern_stops_nonnormalized 
     (agency_id, agency_name, route_short_name, route_long_name, 
      direction_name, direction_id, trip_headsign_id, 
-     trip_headsign, stop_id, stop_order, timed_pattern_id, 
+     trip_headsign, stop_id, \"stop_order\", timed_pattern_id, 
      pattern_id, arrival_time, departure_time, pickup_type, drop_off_type, 
      one_trip, trips_list, stops_pattern, arrival_time_intervals, 
      departure_time_intervals, route_id, stop_headsign_id)
@@ -173,7 +173,7 @@ WITH pattern_time_intervals AS (
 SELECT timed_patterns.agency_id, agency.agency_name, routes.route_short_name
      , routes.route_long_name, directions.direction_label as direction_name, trips.direction_id
      , headsigns.headsign_id, headsigns.headsign, stop_times.stop_id
-     , dense_rank() over (partition by timed_pattern_id order by stop_times.stop_sequence) as stop_order
+     , dense_rank() over (partition by timed_pattern_id order by stop_times.stop_sequence) as \"stop_order\"
      , timed_pattern_id
      , stop_patterns.pattern_id
      , CASE WHEN stop_times.arrival_time IS NOT NULL 
@@ -275,20 +275,20 @@ $result = db_query($restart_zones_sequence);
 // pattern_stop.sql
 $migrate_pattern_stop_query  = "
     INSERT into {$table_prefix}.pattern_stops
-    SELECT DISTINCT  agency_id, pattern_id, stop_order, stop_id 
+    SELECT DISTINCT  agency_id, pattern_id, \"stop_order\", stop_id 
     FROM {$table_prefix}.timed_pattern_stops_nonnormalized
-    ORDER BY agency_id, pattern_id, stop_order";
+    ORDER BY agency_id, pattern_id, \"stop_order\"";
 $result = db_query($migrate_pattern_stop_query);
 
 // timed_pattern_intervals.sql
 $migrate_timed_pattern_stop_query  = "
     INSERT into {$table_prefix}.timed_pattern_stops 
-        (agency_id, timed_pattern_id, stop_order, arrival_time, departure_time
+        (agency_id, timed_pattern_id, \"stop_order\", arrival_time, departure_time
        , pickup_type, drop_off_type, headsign_id)
-    SELECT DISTINCT agency_id, timed_pattern_id, stop_order, arrival_time, departure_time
+    SELECT DISTINCT agency_id, timed_pattern_id, \"stop_order\", arrival_time, departure_time
                   , pickup_type, drop_off_type, stop_headsign_id
     FROM {$table_prefix}.timed_pattern_stops_nonnormalized
-    ORDER BY agency_id, timed_pattern_id, stop_order";
+    ORDER BY agency_id, timed_pattern_id, \"stop_order\"";
 $result = db_query($migrate_timed_pattern_stop_query);
 
 // timed_pattern.sql
@@ -302,12 +302,12 @@ $result = db_query($migrate_timed_pattern_query);
 // routes.sql
 $migrate_routes_stop_query  = "
     INSERT INTO {$table_prefix}.routes 
-        (agency_id, route_id, route_short_name, route_long_name, route_desc, route_type
+        (agency_id, route_id, route_short_name, route_long_name, route_description, route_type
        , route_color, route_text_color, route_url, route_bikes_allowed, route_id_import
-       , last_modified, route_sort_order, hidden) 
+       , last_modified, route_sort_order, enabled) 
     SELECT agency_id, route_id, route_short_name, route_long_name, route_desc, route_type
          , route_color, route_text_color, route_url, route_bikes_allowed, route_id_import
-         , last_modified, route_sort_order, hidden 
+         , last_modified, route_sort_order, CASE WHEN hidden THEN False ELSE True END
     FROM routes 
     WHERE agency_id IN ($agency_string)";
 $result = db_query($migrate_routes_stop_query);
