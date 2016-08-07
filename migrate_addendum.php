@@ -12,6 +12,14 @@ set_time_limit(7200);
 $table_prefix = "play_migrate";
 
 
+function db_query_debug($q) {
+    echo "<br />\nrunning query:\n$q \n";
+    flush();
+    db_query($q);
+}
+
+
+
 // Assign names to patterns based on their first stop, last stop, and 
 // number of stops. Ed 2016-07-10
 // https://github.com/trilliumtransit/migrate-GTFS/issues/12
@@ -103,7 +111,7 @@ from generated_names
 where generated_names.pattern_id = {$table_prefix}.patterns.pattern_id
     ";
 
-$result = db_query($pattern_names_method_beta_query);
+$result = db_query_debug($pattern_names_method_beta_query);
 
 
 
@@ -112,7 +120,7 @@ $block_colors_query = "
     set color = sample_colors.color 
     from ${table_prefix}.sample_colors where sample_colors.color_id = blocks.block_id;
 ";
-$result = db_query($block_colors_query);
+$result = db_query_debug($block_colors_query);
 
 
 // HACK HACK HACK. this needs to be replaced by feed_id code. 
@@ -123,8 +131,7 @@ $stops_agency_groups_query = "
     from ${table_prefix}.agency_group_assoc 
     where stops.agency_id = agency_group_assoc.agency_id;
 ";
-$result = db_query($stops_agency_groups_query);
-
+$result = db_query_debug($stops_agency_groups_query);
 
 echo "<br / >\n" . "Migration addendum successful.";
 
