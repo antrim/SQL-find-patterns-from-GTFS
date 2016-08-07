@@ -14,6 +14,7 @@ $table_prefix = "play_migrate";
 
 function db_query_debug($q) {
     echo "<br />\nrunning query:\n$q \n";
+    ob_flush();
     flush();
     db_query($q);
 }
