@@ -46,28 +46,6 @@ $agency_string = db_fetch_array($result)[0];
 echo "<br />\n agency_string $agency_string";
 
 
-$migrate_agency_query  = "
-    INSERT INTO {$table_prefix}.agencies
-        (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id
-       , agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info
-       , query_tracking, last_modified, maintenance_start, gtfs_plus
-       , no_frequencies, feed_id) 
-    SELECT DISTINCT agency.agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id
-       , agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info
-       , query_tracking, agency.last_modified, maintenance_start, gtfs_plus
-       , no_frequencies, agency_group_id as feed_id 
-    FROM agency
-    INNER JOIN agency_group_assoc ON agency.agency_id = agency_group_assoc.agency_id 
-    WHERE 
-        agency.agency_id IN ($agency_string)
-            /* Special case, megabus assigned to two agency groups, we need to remove one of them:
-             * https://github.com/trilliumtransit/GTFSManager/issues/327 */
-        AND (NOT (agency_group_id = 179 AND agency_id = 231)) 
-    ";
-
-$migrate_agency_result = db_query($migrate_agency_query);
-
-
 // So apparently trillium_gtfs_web will never be able to run truncate on the 
 // table created by aaron_super with an autoincrement counter
 // http://dba.stackexchange.com/questions/58282/error-must-be-owner-of-relation-user-account-id-seq
@@ -103,6 +81,30 @@ $truncate_migrate_tables_query = "
              RESTART IDENTITY;";
 
 $truncate_migrate_tables_result = db_query($truncate_migrate_tables_query);
+
+$migrate_agency_query  = "
+    INSERT INTO {$table_prefix}.agencies
+        (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id
+       , agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info
+       , query_tracking, last_modified, maintenance_start, gtfs_plus
+       , no_frequencies, feed_id) 
+    SELECT DISTINCT agency.agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id
+       , agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info
+       , query_tracking, agency.last_modified, maintenance_start, gtfs_plus
+       , no_frequencies, agency_group_id as feed_id 
+    FROM agency
+    INNER JOIN agency_group_assoc ON agency.agency_id = agency_group_assoc.agency_id 
+    WHERE 
+        agency.agency_id IN ($agency_string)
+            /* Special case, megabus assigned to two agency groups, we need to remove one of them:
+             * https://github.com/trilliumtransit/GTFSManager/issues/327 */
+        AND (NOT (agency_group_id = 179 AND agency_id = 231)) 
+    ";
+echo "<br />\n migrate_agency_query $migrate_agency_query";
+
+$migrate_agency_result = db_query($migrate_agency_query);
+
+
 
 $migrate_timed_pattern_stops_nonnormalized_query  = "
 INSERT INTO {$table_prefix}.timed_pattern_stops_nonnormalized 
