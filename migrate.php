@@ -2,14 +2,7 @@
 <body>
 <?php
 
-function db_query_debug($q) {
-    echo "<br />\nrunning query:\n$q \n";
-    ob_flush();
-    flush();
-    $rv = db_query($q);
-    echo "<br />\ndatabase return value: $rv \n";
-    return $rv;
-}
+require_once './migrate_util.php';
 
 // require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
 require_once './includes/config.inc.php';
@@ -19,7 +12,6 @@ set_time_limit(7200);
 
 # $table_prefix = "migrate";
 $table_prefix = "play_migrate";
-
 
 # $agency_array = array (1, 3, 175, 267, 392);
 #
@@ -101,7 +93,7 @@ $migrate_agency_query  = "
        , query_tracking, agency.last_modified, maintenance_start, gtfs_plus
        , no_frequencies, agency_group_id as feed_id 
     FROM agency
-    INNER JOIN agency_group_assoc ON agency.agency_id = agency_group_assoc.agency_id 
+    INNER JOIN agency_group_assoc USING (agency_id)
     WHERE 
         agency.agency_id IN ($agency_string)
             /* Special case, megabus assigned to two agency groups, we need to remove one of them:

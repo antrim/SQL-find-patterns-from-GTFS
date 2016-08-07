@@ -2,6 +2,8 @@
 <body>
 <?php
 
+require_once './migrate_util.php';
+
 // require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
 require_once './includes/config.inc.php';
 
