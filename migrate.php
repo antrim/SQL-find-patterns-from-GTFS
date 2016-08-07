@@ -463,8 +463,8 @@ $patterns_nonnormalized_result   = db_query_debug($patterns_nonnormalized_query)
   
 while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
     $timed_pattern_id = $row['timed_pattern_id'];
-    $agency_id = $row['agency_id'];
-    $trips_list = $row['trips_list'];
+    $agency_id        = $row['agency_id'];
+    $trips_list       = $row['trips_list'];
 
     $schedule_insert_query = "
        INSERT into {$table_prefix}.trips

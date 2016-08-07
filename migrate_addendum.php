@@ -13,18 +13,6 @@ set_time_limit(7200);
 # $table_prefix = "migrate";
 $table_prefix = "play_migrate";
 
-function db_query_debug($q) {
-    echo "<br />\nrunning query:\n$q \n";
-    ob_flush();
-    flush();
-    $rv = db_query($q);
-    echo "<br />\ndatabase return value: $rv \n";
-    ob_flush();
-    flush();
-    return $rv;
-}
-
-
 // Assign names to patterns based on their first stop, last stop, and 
 // number of stops. Ed 2016-07-10
 // https://github.com/trilliumtransit/migrate-GTFS/issues/12
