@@ -6,7 +6,7 @@ function db_query_debug($q) {
     echo "<br />\nrunning query:\n$q \n";
     ob_flush();
     flush();
-    db_query($q);
+    return db_query($q);
 }
 
 // require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
