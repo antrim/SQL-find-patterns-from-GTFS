@@ -2,129 +2,196 @@
 <body>
 <?php
 
-require_once './migrate_util.php';
-
 // require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
 require_once './includes/config.inc.php';
 
-$live = false;
-set_time_limit(7200);
+require_once './migrate_util.php';
 
-# $table_prefix = "migrate";
-$table_prefix = "play_migrate";
 
-// Assign names to patterns based on their first stop, last stop, and 
-// number of stops. Ed 2016-07-10
-// https://github.com/trilliumtransit/migrate-GTFS/issues/12
-$pattern_names_method_alpha_query = "
-WITH 
+# This query refreshes the first arrivals.
+$refresh_first_arrivals_for_trip_query = "
+    refresh materialized view play_migrate.dev_first_arrivals_for_trip ;
 
-pattern_stop_summary AS 
-( SELECT 
-    pattern_id, 
-    count(*) AS number_of_stops, 
-    min(\"stop_order\") AS min_stop_order, 
-    max(\"stop_order\") AS max_stop_order 
-  FROM {$table_prefix}.pattern_stops 
-  GROUP BY pattern_id), 
+    begin;
+        truncate play_migrate.snap_first_arrivals_for_trip;
 
-generated_names AS 
-( SELECT p.pattern_id
-  , s1.name || ' to ' || sN.name || ' x' || number_of_stops AS generated_name
-  FROM {$table_prefix}.patterns p
-  JOIN pattern_stop_summary ps using(pattern_id) 
-  JOIN {$table_prefix}.pattern_stops ps1
-       ON (ps1.pattern_id = p.pattern_id AND ps1.\"stop_order\" = min_stop_order) 
-  JOIN {$table_prefix}.pattern_stops psN
-       ON (psN.pattern_id = p.pattern_id AND psN.\"stop_order\" = max_stop_order) 
-  JOIN stops s1 ON (s1.stop_id = ps1.stop_id)
-  JOIN stops sN ON (sN.stop_id = psN.stop_id))
+        insert into play_migrate.snap_first_arrivals_for_trip 
+            select * from play_migrate.dev_first_arrivals_for_trip;
+    commit;
 
-UPDATE ${table_prefix}_patterns SET name = generated_name 
-FROM generated_names
-WHERE generated_names.pattern_id = {$table_prefix}.patterns.pattern_id;
+    begin;
+        truncate migrate.snap_first_arrivals_for_trip;
+
+        insert into migrate.snap_first_arrivals_for_trip 
+            select * from play_migrate.dev_first_arrivals_for_trip;
+    commit;
     ";
 
+if (False) {
+    # It takes 10 minutes, so we typically only
+    # run this once per day.
+    db_query_debug($refresh_first_arrivals_for_trip_query);
+}
 
 
 
-// Assign names to patterns based on the difference in which stops they visit 
-// compared to the "Primary" (most-often-used) pattern for their route.
-// Ed 2016-07-12
-// https://github.com/trilliumtransit/migrate-GTFS/issues/11
-$pattern_names_method_beta_query = "
-WITH
+db_query_debug("
+    TRUNCATE {$table_prefix}.dev_patterns_trips;
+");
 
-patterns_with_stops_difference AS 
-(select
-    p.route_id, p.pattern_id, primary_pattern_id  
-  , array_length(s_agg.stop_ids, 1) as n_stops
-  , coalesce(array_length(s_agg.stop_ids - primary_s_agg.primary_stop_ids, 1), 0) as n_added_stops
-  , coalesce(array_length(primary_s_agg.primary_stop_ids - s_agg.stop_ids, 1), 0) as n_removed_stops
-  , s_agg.stop_ids - primary_s_agg.primary_stop_ids as added_stop_ids
-  , primary_s_agg.primary_stop_ids - s_agg.stop_ids as removed_stop_ids
-  , s_agg.stop_ids
-from {$table_prefix}.patterns p
-join {$table_prefix}.route_primary_patterns AS route_primary_patterns using (route_id, direction_id)
-join
-    ( select pattern_id, array_agg(stop_id order by stop_id) stop_ids
-      from {$table_prefix}.pattern_stops group by pattern_id) s_agg
-    using (pattern_id)
-join
-    ( select pattern_id, array_agg(stop_id order by stop_id) primary_stop_ids
-      from {$table_prefix}.pattern_stops group by pattern_id) primary_s_agg
-    on (primary_s_agg.pattern_id = route_primary_patterns.primary_pattern_id)  )
-
-,generated_names AS
-(select
-    route_id
-  , pattern_id
-  , primary_pattern_id
-  , n_added_stops
-  , n_removed_stops
-  , case when pattern_id = primary_pattern_id 
-        then 'Primary' 
-        else case when (n_added_stops > 3 or n_added_stops = 0)
-                 then '+ '  || n_added_stops || ' stops'
-                 else '+ '  || (SELECT string_agg(name, ' + ')
-                                FROM  {$table_prefix}.stops 
-                                WHERE stop_id  IN (SELECT unnest(added_stop_ids))) END
-          || case when (n_removed_stops > 3 or n_removed_stops = 0)
-                 then ' - ' || n_removed_stops || ' stops'
-                 else ' - ' || (SELECT string_agg(name, ' - ') 
-                                FROM  {$table_prefix}.stops 
-                                WHERE stop_id  IN (SELECT unnest(removed_stop_ids))) END
-        end
-   as generated_name
-from patterns_with_stops_difference
-order by route_id, pattern_id)
-
-update {$table_prefix}.patterns SET name = generated_name
-from generated_names
-where generated_names.pattern_id = {$table_prefix}.patterns.pattern_id
-    ";
-
-$result = db_query_debug($pattern_names_method_beta_query);
-
-
-
-$block_colors_query = "
-    update ${table_prefix}.blocks blocks 
-    set color = sample_colors.color 
-    from ${table_prefix}.sample_colors where sample_colors.color_id = blocks.block_id;
+// combined_schedule_insert_query
+$patterns_trips_query = "
+    WITH patterns_trips AS 
+    (
+        SELECT DISTINCT 
+            timed_pattern_id, agency_id, 
+            unnest(trips_list) as trip_id
+        FROM {$table_prefix}.timed_pattern_stops_nonnormalized
+        GROUP BY timed_pattern_id, agency_id, trips_list
+    ) 
+    INSERT INTO {$table_prefix}.dev_patterns_trips 
+        ( timed_pattern_id, agency_id, trip_id )
+    SELECT
+        timed_pattern_id, agency_id, trip_id
+    FROM patterns_trips
+    WHERE agency_id NOT IN ($skip_agency_id_string)
 ";
-$result = db_query_debug($block_colors_query);
+
+db_query_debug($patterns_trips_query);
+
+// db_query_debug("
+//    TRUNCATE {$table_prefix}.dev_trips;
+// ");
+
+/*
+db_query_debug("
+    refresh materialized view play_migrate.dev_first_arrivals_for_trip ;
+
+    truncate play_migrate.snap_first_arrivals_for_trip;
+
+    insert into play_migrate.snap_first_arrivals_for_trip 
+        select * from play_migrate.dev_first_arrivals_for_trip;
+
+    truncate migrate.snap_first_arrivals_for_trip;
+
+    insert into migrate.snap_first_arrivals_for_trip 
+        select * from play_migrate.dev_first_arrivals_for_trip;
+ ");
+ */
 
 
-// HACK HACK HACK. this needs to be replaced by feed_id code. 
-// ED 2016-08-06
-$stops_agency_groups_query = "
-    update ${table_prefix}.stops 
-        set agency_group_id = agency_group_assoc.agency_group_id 
-    from ${table_prefix}.agency_group_assoc 
-    where stops.agency_id = agency_group_assoc.agency_id;
-";
-$result = db_query_debug($stops_agency_groups_query);
+$add_stop_time_trips_in_calendar_query = "
+   INSERT into {$table_prefix}.trips
+        (agency_id
+       , timed_pattern_id
+       , calendar_id
+       , start_time
+       , end_time, headway_secs, block_id
+       , monday, tuesday, wednesday, thursday, friday, saturday, sunday
+       , in_seat_transfer)
+
+   SELECT trips.agency_id
+        , dev_patterns_trips.timed_pattern_id AS timed_pattern_id
+        , service_schedule_group_id AS calendar_id
+        , snap_first_arrivals_for_trip.first_arrival_time AS start_time 
+        , NULL::INTERVAL as end_time,  NULL::integer as headway_secs, block_id
+        , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
+        , friday::boolean, saturday::boolean, sunday::boolean 
+        , in_seat_transfer = 1
+   FROM trips 
+   INNER JOIN calendar 
+      ON trips.service_id = calendar.calendar_id 
+   INNER JOIN {$table_prefix}.snap_first_arrivals_for_trip using (trip_id)
+   INNER JOIN {$table_prefix}.dev_patterns_trips using (trip_id)
+   WHERE NOT EXISTS (SELECT NULL from frequencies 
+                         WHERE trips.trip_id = frequencies.trip_id) 
+         AND based_on IS NULL 
+         AND trips.service_id IS NOT NULL 
+         AND snap_first_arrivals_for_trip.first_arrival_time IS NOT null
+   GROUP BY trips.agency_id, timed_pattern_id, calendar_id
+          , snap_first_arrivals_for_trip.first_arrival_time
+          , trips.trip_id, end_time
+          , headway_secs, block_id, monday, tuesday, wednesday, thursday
+          , friday, saturday, sunday, in_seat_transfer
+    /* ED: group might be necessary after all. testing. 2016-08-07
+     */
+       ";
+
+db_query_debug($add_stop_time_trips_in_calendar_query);
+
+// strange. no rows copied here. investigate more fully?
+db_query_debug ("
+   INSERT into {$table_prefix}.trips
+        (agency_id, timed_pattern_id, calendar_id
+       , start_time
+       , end_time, headway_secs, block_id
+       , monday, tuesday, wednesday, thursday, friday, saturday, sunday
+       , in_seat_transfer)
+
+   SELECT trips.agency_id, dev_patterns_trips.timed_pattern_id AS timed_pattern_id
+        , service_schedule_group_id AS calendar_id, trips.trip_start_time::INTERVAL AS start_time
+        , NULL::INTERVAL as end_time, NULL::INTEGER as headway_secs, block_id
+        , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
+        , friday::boolean, saturday::boolean, sunday::boolean 
+        , in_seat_transfer = 1
+   FROM trips 
+   INNER JOIN {$table_prefix}.dev_patterns_trips using (trip_id)
+   INNER JOIN calendar 
+           ON trips.service_id = calendar.calendar_id 
+   WHERE trips.service_id IS NOT NULL 
+         AND NOT EXISTS (SELECT NULL from frequencies 
+                         WHERE trips.trip_id = frequencies.trip_id) 
+         AND based_on IS NOT NULL;
+     ");
+
+// strange. no rows copied here. investigate more fully?
+db_query_debug ("
+   INSERT into {$table_prefix}.trips
+        (agency_id, timed_pattern_id, calendar_id
+       , start_time
+       , end_time, headway_secs, block_id
+       , monday, tuesday, wednesday, thursday, friday, saturday, sunday
+       , in_seat_transfer)
+
+   SELECT trips.agency_id, dev_patterns_trips.timed_pattern_id AS timed_pattern_id
+        , service_schedule_group_id AS calendar_id, frequencies.start_time::INTERVAL AS start_time
+        , frequencies.end_time::INTERVAL as end_time, frequencies.headway_secs 
+        , block_id
+        , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
+        , friday::boolean, saturday::boolean, sunday::boolean 
+        , in_seat_transfer = 1 
+   FROM frequencies 
+   INNER JOIN trips USING (trip_id)
+   INNER JOIN {$table_prefix}.dev_patterns_trips using (trip_id)
+   INNER JOIN calendar 
+           ON trips.service_id = calendar.calendar_id 
+   WHERE trips.service_id IS NOT NULL 
+         AND based_on IS NOT NULL
+     ");
+
+
+db_query_debug("
+   INSERT into {$table_prefix}.trips
+        (agency_id, timed_pattern_id, calendar_id
+       , start_time
+       , end_time, headway_secs, block_id
+       , monday, tuesday, wednesday, thursday, friday, saturday, sunday
+       , in_seat_transfer)
+
+   SELECT trips.agency_id, dev_patterns_trips.timed_pattern_id AS timed_pattern_id
+        , service_schedule_group_id AS calendar_id, frequencies.start_time::INTERVAL AS start_time
+        , frequencies.end_time::INTERVAL as end_time, frequencies.headway_secs AS headway, block_id
+        , monday::boolean, tuesday::boolean, wednesday::boolean, thursday::boolean
+        , friday::boolean, saturday::boolean, sunday::boolean 
+        , in_seat_transfer = 1
+   FROM frequencies 
+   INNER JOIN trips USING (trip_id)
+   INNER JOIN {$table_prefix}.dev_patterns_trips using (trip_id)
+   INNER JOIN calendar 
+           ON trips.service_id = calendar.calendar_id 
+   WHERE trips.service_id IS NOT NULL 
+         AND based_on IS NULL;
+");
 
 echo "<br / >\n" . "Migration addendum successful.";
 

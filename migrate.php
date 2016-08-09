@@ -2,16 +2,10 @@
 <body>
 <?php
 
-require_once './migrate_util.php';
-
 // require_once $_SERVER['DOCUMENT_ROOT'] . '/includes/config.inc.php';
 require_once './includes/config.inc.php';
 
-$live = false;
-set_time_limit(7200);
-
-# $table_prefix = "migrate";
-$table_prefix = "play_migrate";
+require_once './migrate_util.php';
 
 # $agency_array = array (1, 3, 175, 267, 392);
 #
@@ -21,6 +15,7 @@ $table_prefix = "play_migrate";
 #   Larger values to diagnose problems uncovered by larger collections of agencies.
 #   Smaller values for quicker turnaround to debug the migration script itself.
 #
+/*
 $how_many_agencies_to_test = "800";
 $agency_string_query = "
     SELECT string_agg(agency_id::text, ', ' ORDER BY agency_id) AS agency_string
@@ -45,6 +40,8 @@ $result = db_query_debug($agency_string_query);
 $agency_string = db_fetch_array($result)[0];
 
 echo "<br />\n agency_string $agency_string";
+ */
+// $agency_string  = "@@@@@@NONE@@@@@@@"; # unused: this ought to cause an error in postgres.
 
 // So apparently trillium_gtfs_web will never be able to run truncate on the 
 // table created by aaron_super with an autoincrement counter
@@ -95,14 +92,27 @@ $migrate_agency_query  = "
     FROM agency
     INNER JOIN agency_group_assoc USING (agency_id)
     WHERE 
-        agency.agency_id IN ($agency_string)
-            /* Special case, megabus assigned to two agency groups, we need to remove one of them:
-             * https://github.com/trilliumtransit/GTFSManager/issues/327 */
-        AND (NOT (agency_group_id = 179 AND agency_id = 231)) 
+        /* Special case, megabus assigned to two agency groups, we need to remove one of them:
+        * https://github.com/trilliumtransit/GTFSManager/issues/327  */
+        agency_id not in ($skip_agency_id_string) AND
+        NOT (agency_group_id = 179 AND agency_id = 231)
     ";
+
+/*
+        -- agency.agency_id IN ($agency_string) 
+ */
+
 
 $migrate_agency_result = db_query_debug($migrate_agency_query);
 
+
+
+/*
+    alter table play_migrate.timed_pattern_stops_nonnormalized 
+    alter COLUMN trips_list type integer[] 
+    using (regexp_split_to_array(trips_list,',')::integer[]);
+
+ */
 
 $migrate_timed_pattern_stops_nonnormalized_query  = "
 INSERT INTO {$table_prefix}.timed_pattern_stops_nonnormalized 
@@ -115,7 +125,7 @@ INSERT INTO {$table_prefix}.timed_pattern_stops_nonnormalized
 
 WITH pattern_time_intervals AS (
     SELECT MIN(trips.trip_id) as one_trip
-         , string_agg( trips.trip_id::text, ', ' ORDER BY sequences.min_arrival_time ) AS trips_list
+         , array_agg( trips.trip_id ORDER BY sequences.min_arrival_time ) AS trips_list
          , sequences.stops_pattern, arrival_time_intervals, departure_time_intervals
          , trips.agency_id, trips.route_id, trips.direction_id
     FROM trips
@@ -125,8 +135,9 @@ WITH pattern_time_intervals AS (
              , MIN( stop_times.arrival_time ) AS min_arrival_time
         FROM stop_times
         INNER JOIN trips ON stop_times.trip_id = trips.trip_id
-        WHERE stop_times.agency_id IN ($agency_string) 
-              AND trips.based_on IS NULL
+        WHERE
+            stop_times.agency_id NOT IN ($skip_agency_id_string) 
+            AND  trips.based_on IS NULL
         GROUP BY stop_times.trip_id) AS sequences 
       ON trips.trip_id = sequences.trip_id
 
@@ -150,16 +161,21 @@ WITH pattern_time_intervals AS (
                       , stop_times.trip_id
                  FROM stop_times
                  INNER JOIN trips on stop_times.trip_id = trips.trip_id
-                 WHERE stop_times.agency_id IN ($agency_string) 
-                       AND trips.based_on IS NULL
+                 WHERE 
+                     stop_times.agency_id NOT IN ($skip_agency_id_string) 
+                     AND  trips.based_on IS NULL
                  GROUP BY stop_times.trip_id) min_trip_times 
            ON stop_times.trip_id = min_trip_times.trip_id
-         WHERE stop_times.agency_id in ($agency_string) AND trips.based_on IS NULL
+           WHERE 
+               stop_times.agency_id not in ($skip_agency_id_string) 
+               AND  trips.based_on IS NULL
          GROUP BY min_trip_times.trip_id,min_arrival_time,min_departure_time
         ) AS time_intervals_result
 
        ON sequences.trip_id = time_intervals_result.trip_id
-     WHERE trips.agency_id IN ($agency_string) AND trips.based_on IS NULL
+       WHERE 
+           trips.agency_id NOT IN ($skip_agency_id_string)
+           AND trips.based_on IS NULL
      GROUP BY stops_pattern, arrival_time_intervals, departure_time_intervals
             , trips.agency_id, trips.route_id, trips.direction_id
    )
@@ -171,7 +187,7 @@ WITH pattern_time_intervals AS (
     FROM pattern_time_intervals
     INNER JOIN  stop_times 
            ON pattern_time_intervals.one_trip = stop_times.trip_id 
-    WHERE stop_times.agency_id IN ($agency_string)
+           WHERE stop_times.agency_id NOT IN ($skip_agency_id_string)
     GROUP BY  one_trip, trips_list, stops_pattern, arrival_time_intervals
             , departure_time_intervals, pattern_time_intervals.agency_id, route_id, direction_id
 
@@ -188,7 +204,9 @@ WITH pattern_time_intervals AS (
                   , trips.direction_id
          FROM stop_times
          inner join trips on stop_times.trip_id = trips.trip_id
-         WHERE trips.agency_id IN ($agency_string) AND trips.based_on IS NULL
+         WHERE 
+             trips.agency_id NOT IN ($skip_agency_id_string) 
+             AND trips.based_on IS NULL
          GROUP BY stop_times.trip_id,trips.route_id,trips.direction_id)
     SELECT unique_patterns.stops_pattern,route_id,direction_id,row_number() over() as pattern_id from unique_patterns
 )
@@ -235,7 +253,7 @@ $migrate_feeds_query  = "
     FROM agency_groups 
     INNER JOIN agency_group_assoc 
             ON agency_group_assoc.agency_group_id = agency_groups.agency_group_id 
-    WHERE agency_group_assoc.agency_id IN ($agency_string)";
+    WHERE agency_group_assoc.agency_id NOT IN ($skip_agency_id_string)";
 $migrate_feeds_result = db_query_debug($migrate_feeds_query);
 
 
@@ -264,9 +282,14 @@ $all_zones_wildcard_query = "
 $result = db_query_debug($all_zones_wildcard_query);
 
 $get_least_unused_zone_id = "
-    SELECT 1 + MAX(zone_id)
+    SELECT pg_catalog.setval('{$table_prefix}.zones_zone_id_seq'::regclass, 1 + MAX(zone_id))
     FROM {$table_prefix}.zones";
+
 $result = db_query_debug($get_least_unused_zone_id);
+$least_unused_zone_id = db_fetch_array($result)[0];
+echo "<br />\n setval: least_unused_zone_id $least_unused_zone_id";
+
+/*
 $least_unused_zone_id = db_fetch_array($result)[0];
 echo "<br />\n least_unused_zone_id $least_unused_zone_id";
 $restart_zones_sequence = "
@@ -274,6 +297,7 @@ $restart_zones_sequence = "
     RESTART WITH $least_unused_zone_id
     ";
 $result = db_query_debug($restart_zones_sequence);
+ */
 
 
 // pattern_stop.sql
@@ -287,9 +311,9 @@ $result = db_query_debug($migrate_pattern_stop_query);
 // timed_pattern_intervals.sql
 $migrate_timed_pattern_stop_query  = "
     INSERT into {$table_prefix}.timed_pattern_stops 
-        (agency_id, timed_pattern_id, \"stop_order\", arrival_time, departure_time
+        (agency_id, timed_pattern_id, \"stop_order\", stop_id, arrival_time, departure_time
        , pickup_type, drop_off_type, headsign_id)
-    SELECT DISTINCT agency_id, timed_pattern_id, \"stop_order\", arrival_time, departure_time
+    SELECT DISTINCT agency_id, timed_pattern_id, \"stop_order\", stop_id, arrival_time, departure_time
                   , pickup_type, drop_off_type, stop_headsign_id
     FROM {$table_prefix}.timed_pattern_stops_nonnormalized
     ORDER BY agency_id, timed_pattern_id, \"stop_order\"";
@@ -307,13 +331,15 @@ $result = db_query_debug($migrate_timed_pattern_query);
 $migrate_routes_stop_query  = "
     INSERT INTO {$table_prefix}.routes 
         (agency_id, route_id, route_short_name, route_long_name, route_description, route_type
-       , route_color, route_text_color, route_url, route_bikes_allowed, route_id_import
+       , route_color, route_text_color
+       , route_url, route_bikes_allowed, route_id_import
        , last_modified, route_sort_order, enabled) 
     SELECT agency_id, route_id, route_short_name, route_long_name, route_desc, route_type
-         , route_color, route_text_color, route_url, route_bikes_allowed, route_id_import
+         , route_color, route_text_color
+         , route_url, route_bikes_allowed, route_id_import
          , last_modified, route_sort_order, CASE WHEN hidden THEN False ELSE True END
     FROM routes 
-    WHERE agency_id IN ($agency_string)";
+    WHERE agency_id NOT IN ($skip_agency_id_string)";
 $result = db_query_debug($migrate_routes_stop_query);
 
 /* ED 2016-06-27 On further thought, I think it's better not to include the 
@@ -404,8 +430,9 @@ $migrate_calendar_query  = "
     SELECT agency_id, service_schedule_group_id AS calendar_id
          , service_schedule_group_label AS name
     FROM service_schedule_groups
-    WHERE agency_id IN ($agency_string) 
-          AND service_schedule_group_id IS NOT NULL;";
+    WHERE 
+        agency_id NOT IN ($skip_agency_id_string) 
+        AND service_schedule_group_id IS NOT NULL;";
 $result = db_query_debug($migrate_calendar_query);
 
 // calendar
@@ -414,8 +441,9 @@ $migrate_calendar_bounds_query  = "
         (agency_id, calendar_id, start_date, end_date)
     SELECT agency_id, service_schedule_group_id as calendar_id, start_date, end_date 
     FROM service_schedule_bounds
-    WHERE agency_id IN ($agency_string) 
-          AND service_schedule_group_id IS NOT NULL;";
+    WHERE 
+        agency_id NOT IN ($skip_agency_id_string) 
+        AND service_schedule_group_id IS NOT NULL;";
 $result = db_query_debug($migrate_calendar_bounds_query);
 
 // blocks
@@ -424,50 +452,55 @@ $migrate_blocks_query  = "
         (agency_id, block_id, name)
     SELECT DISTINCT agency_id, block_id, block_label as name
     FROM blocks
-    WHERE agency_id IN ($agency_string) 
-          AND block_id IS NOT NULL;";
+    WHERE 
+        agency_id NOT IN ($skip_agency_id_string)
+    "; 
 $result = db_query_debug($migrate_blocks_query);
 
 // stops
+//
+//
+/* LEFT JOIN means z.zone_id is NULL when zone_id doesn't match zones, 
+ * that's what we want. Ed 2016-06-26
+ * https://github.com/trilliumtransit/migrate-GTFS/issues/6#issuecomment-228627399 
+ */
 $migrate_stops_query  = "
     INSERT into {$table_prefix}.stops 
         (agency_id, stop_id, stop_code, platform_code, location_type
         , parent_station, name, stop_desc, stop_comments, point
         , zone_id
-        , city, direction_id, url, publish_status, timezone
-    )
-   SELECT s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
+        , city, direction_id, url, enabled, timezone
+        )
+    SELECT 
+          s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
         , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments, s.geom::GEOGRAPHY as point
-
-/* LEFT JOIN means z.zone_id is NULL when zone_id doesn't match zones, 
- * that's what we want. Ed 2016-06-26
- * https://github.com/trilliumtransit/migrate-GTFS/issues/6#issuecomment-228627399 
- */
-         , z.zone_id 
-
-         , s.city, direction_id, stop_url, publish_status, stop_timezone
+        , z.zone_id 
+        , s.city, direction_id, stop_url, publish_status AS enabled, stop_timezone
     FROM stops s
     LEFT JOIN zones z USING (zone_id)
-    WHERE s.agency_id IS NOT NULL;
+    WHERE 
+        s.agency_id IS NOT NULL
+        AND agency_id NOT IN ($skip_agency_id_string)
+    ;
 ";
-
-// Ed: migrate everything. Since some stops are owned by agencies we *don't* want 
-// to migrate, but they are used by trips which we *do* want to migrate.
-##   WHERE s.agency_id IN ($agency_string);";
 $result = db_query_debug($migrate_stops_query);
 
 $patterns_nonnormalized_query = "
-    SELECT DISTINCT timed_pattern_id, agency_id, trips_list 
+    SELECT DISTINCT 
+        timed_pattern_id, agency_id, 
+        array_to_string(trips_list, ',') as trips_list 
     FROM {$table_prefix}.timed_pattern_stops_nonnormalized;";
 $patterns_nonnormalized_result   = db_query_debug($patterns_nonnormalized_query);
   
 while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
+    break; // disable this in favor of a select statement.
+
     $timed_pattern_id = $row['timed_pattern_id'];
     $agency_id        = $row['agency_id'];
     $trips_list       = $row['trips_list'];
 
     $schedule_insert_query = "
-       INSERT into {$table_prefix}.trips
+       INSERT into {$table_prefix}.old_trips
             (agency_id, timed_pattern_id, calendar_id
            , start_time
            , end_time, headway_secs, block_id
@@ -484,12 +517,14 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
        FROM trips 
        INNER JOIN calendar 
           ON trips.service_id = calendar.calendar_id 
+       INNER JOIN {$table_prefix}.dev_first_arrivals_for_trip using (trip_id)
        WHERE trips.trip_id IN ({$trips_list}) 
              AND NOT EXISTS (SELECT NULL from frequencies 
                              WHERE trips.trip_id = frequencies.trip_id) 
              AND based_on IS NULL 
              AND trips.service_id IS NOT NULL 
-             AND views.first_arrival_time_for_trip(trips.trip_id) IS NOT NULL 
+ /* AND views.first_arrival_time_for_trip(trips.trip_id) IS NOT NULL  */
+             AND dev_first_arrivals_for_trip.first_arrival_time IS NOT null
        GROUP BY trips.agency_id, timed_pattern_id, calendar_id
               , trips.trip_id, end_time
               , headway_secs, block_id, monday, tuesday, wednesday, thursday
@@ -523,10 +558,10 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
        INNER JOIN trips 
                ON frequencies.trip_id = trips.trip_id 
        INNER JOIN calendar 
-              ON trips.service_id = calendar.calendar_id 
+               ON trips.service_id = calendar.calendar_id 
        WHERE frequencies.trip_id IN ({$trips_list}) 
-       AND trips.service_id IS NOT NULL 
-       AND based_on IS NOT NULL
+             AND trips.service_id IS NOT NULL 
+             AND based_on IS NOT NULL
 
    UNION
        SELECT trips.agency_id, {$timed_pattern_id} AS timed_pattern_id
@@ -546,7 +581,6 @@ while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
 
     // echo $schedule_insert_query."\n\n";
     $schedule_result = db_query_debug($schedule_insert_query);
-
 }
 
 // shape_segments
@@ -758,6 +792,120 @@ $restart_transfers_sequence = "
     RESTART WITH $least_unused_transfer_id
     ";
 $result = db_query_debug($restart_transfers_sequence);
+
+// Assign names to patterns based on their first stop, last stop, and 
+// number of stops. Ed 2016-07-10
+// https://github.com/trilliumtransit/migrate-GTFS/issues/12
+$pattern_names_method_alpha_query = "
+WITH 
+
+pattern_stop_summary AS 
+( SELECT 
+    pattern_id, 
+    count(*) AS number_of_stops, 
+    min(\"stop_order\") AS min_stop_order, 
+    max(\"stop_order\") AS max_stop_order 
+  FROM {$table_prefix}.pattern_stops 
+  GROUP BY pattern_id), 
+
+generated_names AS 
+( SELECT p.pattern_id
+  , s1.name || ' to ' || sN.name || ' x' || number_of_stops AS generated_name
+  FROM {$table_prefix}.patterns p
+  JOIN pattern_stop_summary ps using(pattern_id) 
+  JOIN {$table_prefix}.pattern_stops ps1
+       ON (ps1.pattern_id = p.pattern_id AND ps1.\"stop_order\" = min_stop_order) 
+  JOIN {$table_prefix}.pattern_stops psN
+       ON (psN.pattern_id = p.pattern_id AND psN.\"stop_order\" = max_stop_order) 
+  JOIN stops s1 ON (s1.stop_id = ps1.stop_id)
+  JOIN stops sN ON (sN.stop_id = psN.stop_id))
+
+UPDATE ${table_prefix}_patterns SET name = generated_name 
+FROM generated_names
+WHERE generated_names.pattern_id = {$table_prefix}.patterns.pattern_id;
+    ";
+
+
+
+
+// Assign names to patterns based on the difference in which stops they visit 
+// compared to the "Primary" (most-often-used) pattern for their route.
+// Ed 2016-07-12
+// https://github.com/trilliumtransit/migrate-GTFS/issues/11
+$pattern_names_method_beta_query = "
+WITH
+
+patterns_with_stops_difference AS 
+(select
+    p.route_id, p.pattern_id, primary_pattern_id  
+  , array_length(s_agg.stop_ids, 1) as n_stops
+  , coalesce(array_length(s_agg.stop_ids - primary_s_agg.primary_stop_ids, 1), 0) as n_added_stops
+  , coalesce(array_length(primary_s_agg.primary_stop_ids - s_agg.stop_ids, 1), 0) as n_removed_stops
+  , s_agg.stop_ids - primary_s_agg.primary_stop_ids as added_stop_ids
+  , primary_s_agg.primary_stop_ids - s_agg.stop_ids as removed_stop_ids
+  , s_agg.stop_ids
+from {$table_prefix}.patterns p
+join {$table_prefix}.route_primary_patterns AS route_primary_patterns using (route_id, direction_id)
+join
+    ( select pattern_id, array_agg(stop_id order by stop_id) stop_ids
+      from {$table_prefix}.pattern_stops group by pattern_id) s_agg
+    using (pattern_id)
+join
+    ( select pattern_id, array_agg(stop_id order by stop_id) primary_stop_ids
+      from {$table_prefix}.pattern_stops group by pattern_id) primary_s_agg
+    on (primary_s_agg.pattern_id = route_primary_patterns.primary_pattern_id)  )
+
+,generated_names AS
+(select
+    route_id
+  , pattern_id
+  , primary_pattern_id
+  , n_added_stops
+  , n_removed_stops
+  , case when pattern_id = primary_pattern_id 
+        then 'Primary' 
+        else case when (n_added_stops > 3 or n_added_stops = 0)
+                 then '+ '  || n_added_stops || ' stops'
+                 else '+ '  || (SELECT string_agg(name, ' + ')
+                                FROM  {$table_prefix}.stops 
+                                WHERE stop_id  IN (SELECT unnest(added_stop_ids))) END
+          || case when (n_removed_stops > 3 or n_removed_stops = 0)
+                 then ' - ' || n_removed_stops || ' stops'
+                 else ' - ' || (SELECT string_agg(name, ' - ') 
+                                FROM  {$table_prefix}.stops 
+                                WHERE stop_id  IN (SELECT unnest(removed_stop_ids))) END
+        end
+   as generated_name
+from patterns_with_stops_difference
+order by route_id, pattern_id)
+
+update {$table_prefix}.patterns SET name = generated_name
+from generated_names
+where generated_names.pattern_id = {$table_prefix}.patterns.pattern_id
+    ";
+
+$result = db_query_debug($pattern_names_method_beta_query);
+
+
+$block_colors_query = "
+    update ${table_prefix}.blocks blocks 
+    set color = sample_colors.color 
+    from ${table_prefix}.sample_colors where sample_colors.color_id = blocks.block_id;
+";
+$result = db_query_debug($block_colors_query);
+
+
+// HACK HACK HACK. this needs to be replaced by feed_id code. 
+// ED 2016-08-06
+$stops_agency_groups_query = "
+    update ${table_prefix}.stops 
+        set agency_group_id = agency_group_assoc.agency_group_id 
+    from ${table_prefix}.agency_group_assoc 
+    where stops.agency_id = agency_group_assoc.agency_id;
+";
+$result = db_query_debug($stops_agency_groups_query);
+
+
 
 echo "<br / >\n" . "Migration successful.";
 
