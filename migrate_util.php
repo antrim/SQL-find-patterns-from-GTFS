@@ -18,10 +18,11 @@ $skip_agency_id_string =  "210";
 # Don't set this to migrate unless you're testing after-hours!
 # $table_prefix = "migrate";
 
-$src_schema = "public";
+# $src_schema = "public";
+$src_schema = getenv('SRC_SCHEMA') ? getenv('SRC_SCHEMA') : "public";
 
-$dst_schema = "migrate";
 # $table_prefix = "play_migrate";
+$dst_schema = getenv('DST_SCHEMA') ? getenv('DST_SCHEMA') : "play_migrate";
 
 $live = false;
 set_time_limit(7200);
