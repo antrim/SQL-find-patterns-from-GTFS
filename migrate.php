@@ -527,7 +527,7 @@ UPDATE {$dst_schema}.stops SET timezone = coalesce(sa.timezone, sa.agency_timezo
 FROM
 (
     SELECT
-        timezone, agency_timezone, agency_id, stop_id
+        stops.timezone, agencies.agency_timezone, stops_agencies.agency_id, stops.stop_id
     FROM {$dst_schema}.stops
     JOIN {$dst_schema}.stops_agencies ON stops.stop_id = stops_agencies.stop_id
     JOIN {$dst_schema}.agencies ON stops_agencies.agency_id = agencies.agency_id 
