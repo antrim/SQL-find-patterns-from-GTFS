@@ -49,6 +49,9 @@ echo "<br />\n agency_string $agency_string";
 //
 // ED. Addressed via changing owner of sequence, for example:
 // ALTER SEQUENCE play_migrate_blocks_block_id_seq OWNER TO trillium_gtfs_group ;
+//
+
+db_query_debug("BEGIN TRANSACTION;");
 
 $truncate_migrate_tables_query = "
     TRUNCATE {$dst_schema}.agencies
@@ -74,6 +77,8 @@ $truncate_migrate_tables_query = "
            , {$dst_schema}.timed_pattern_stops_nonnormalized
            , {$dst_schema}.transfers
            , {$dst_schema}.trips
+           , {$dst_schema}.users
+           , {$dst_schema}.user_permissions
            , {$dst_schema}.zones
              RESTART IDENTITY;";
 
@@ -92,10 +97,7 @@ $migrate_agency_query  = "
     FROM {$src_schema}.agency
     INNER JOIN {$src_schema}.agency_group_assoc USING (agency_id)
     WHERE 
-        /* Special case, megabus assigned to two agency groups, we need to remove one of them:
-        * https://github.com/trilliumtransit/GTFSManager/issues/327  */
-        agency_id not in ($skip_agency_id_string) AND
-        NOT (agency_group_id = 179 AND agency_id = 231)
+        agency_id not in ($skip_agency_id_string) 
     ";
 /*
         -- agency.agency_id IN ($agency_string) 
@@ -479,23 +481,27 @@ $migrate_blocks_query  = "
     "; 
 $result = db_query_debug($migrate_blocks_query);
 
-// stops
-//
-//
-/* LEFT JOIN means z.zone_id is NULL when zone_id doesn't match zones, 
- * that's what we want. Ed 2016-06-26
- * https://github.com/trilliumtransit/migrate-GTFS/issues/6#issuecomment-228627399 
+/* 
+ LEFT JOIN means z.zone_id is NULL when zone_id doesn't match zones, 
+ that's what we want. Ed 2016-06-26
+ https://github.com/trilliumtransit/migrate-GTFS/issues/6#issuecomment-228627399 
+
+
+ Note also: we're resetting wheelchair_boarding to the default value of 0 per
+ https://github.com/trilliumtransit/GTFSManager/issues/378
  */
 $migrate_stops_query  = "
     INSERT into {$dst_schema}.stops 
         (agency_id, stop_id, stop_code, platform_code, location_type
-        , parent_station, name, stop_desc, stop_comments, point
+        , parent_station_id, name, stop_desc, stop_comments
+        , point
         , zone_id
         , city, direction_id, url, enabled, timezone
         )
     SELECT 
           s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
-        , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments, s.geom::GEOGRAPHY as point
+        , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments
+        , ST_SetSRID(ST_Point(stop_lon, stop_lat), 4326)::GEOGRAPHY as point
         , z.zone_id 
         , s.city, direction_id, stop_url, publish_status AS enabled, stop_timezone
     FROM {$src_schema}.stops s
@@ -507,6 +513,31 @@ $migrate_stops_query  = "
 ";
 $result = db_query_debug($migrate_stops_query);
 
+db_query_debug("
+UPDATE {$dst_schema}.stops SET timezone = NULL WHERE length(timezone) = 0;
+    ");
+
+db_query_debug("
+UPDATE {$dst_schema}.stops SET timezone = 'America/New_York' WHERE timezone = 'US/Eastern';
+    ");
+
+
+db_query_debug("
+UPDATE {$dst_schema}.stops SET timezone = coalesce(sa.timezone, sa.agency_timezone) 
+FROM
+(
+    SELECT
+        timezone, agency_timezone, agency_id, stop_id
+    FROM {$dst_schema}.stops
+    JOIN {$dst_schema}.stops_agencies ON stops.stop_id = stops_agencies.stop_id
+    JOIN {$dst_schema}.agencies ON stops_agencies.agency_id = agencies.agency_id 
+) sa 
+WHERE
+    stops.stop_id = sa.stop_id
+    AND stops.timezone IS NULL ;
+    ");
+
+
 $patterns_nonnormalized_query = "
     SELECT DISTINCT 
         timed_pattern_id, agency_id, 
@@ -514,7 +545,7 @@ $patterns_nonnormalized_query = "
     FROM {$dst_schema}.timed_pattern_stops_nonnormalized;";
 $patterns_nonnormalized_result   = db_query_debug($patterns_nonnormalized_query);
   
-while ($row = db_fetch_array($patterns_nonnormalized_result, MYSQL_ASSOC)) {
+while ($row = db_fetch_array($patterns_nonnormalized_result)) {
     break; // disable this in favor of a select statement.
 
     $timed_pattern_id = $row['timed_pattern_id'];
@@ -895,7 +926,7 @@ $refresh_first_arrivals_for_trip_query = "
                     stop_sequence,
                     min(stop_sequence) over (partition by trip_id) as min_stop_sequence 
                 from {$src_schema}.stop_times
-                join {$src_schema}..trips using (trip_id)
+                join {$src_schema}.trips using (trip_id)
                 where stop_times.agency_id in (select agency_id from {$dst_schema}.agencies)
             ) st
         where stop_sequence = min_stop_sequence;
@@ -1112,7 +1143,40 @@ $order_unordered_routes_alphabetically_by_route_long_name_query = "
 
 db_query_debug($order_unordered_routes_alphabetically_by_route_long_name_query);
 
+$migrate_user_query  = "
+    INSERT INTO {$dst_schema}.users
+        (user_id, email, pass, first_name, last_name, active,
+        registration_date,
+        read_only,
+        admin,
+        language_id,
+        last_modified) 
+    SELECT 
+        user_id, email, pass, first_name, last_name, active,
+        registration_date, 
+        (read_only = 1)::boolean,
+        (admin = 1)::boolean,
+        language_id,
+        last_modified
+    FROM {$src_schema}.users
+    ";
 
+db_query_debug($migrate_user_query);
+
+$migrate_user_permissions_query  = "
+    INSERT INTO {$dst_schema}.user_permissions
+        (permission_id, agency_id, user_id, last_modified)
+    SELECT 
+        up.permission_id, up.agency_id, up.user_id, up.last_modified
+    FROM {$src_schema}.user_permissions up
+    JOIN {$dst_schema}.agencies USING (agency_id)
+    ";
+
+db_query_debug($migrate_user_permissions_query);
+
+
+
+db_query_debug("COMMIT TRANSACTION;");
 
 echo "<br / >\n" . "Migration successful.";
 
