@@ -513,8 +513,20 @@ $migrate_stops_query  = "
 ";
 $result = db_query_debug($migrate_stops_query);
 
+
+// Set feed_id for stops.
+$stops_feed_id_query = "
+    update ${dst_schema}.stops 
+        set feed_id = agency_group_assoc.agency_group_id 
+    from ${src_schema}.agency_group_assoc 
+    where stops.agency_id = agency_group_assoc.agency_id;
+";
+$result = db_query_debug($stops_feed_id_query);
+
+
 db_query_debug("
-UPDATE {$dst_schema}.stops SET timezone = NULL WHERE length(timezone) = 0;
+UPDATE {$dst_schema}.stops SET timezone = NULL 
+WHERE length(timezone) = 0;
     ");
 
 db_query_debug("
@@ -900,16 +912,6 @@ $block_colors_query = "
     from ${dst_schema}.sample_colors where sample_colors.color_id = blocks.block_id;
 ";
 $result = db_query_debug($block_colors_query);
-
-
-// Set feed_id for stops.
-$stops_feed_id_query = "
-    update ${dst_schema}.stops 
-        set feed_id = agency_group_assoc.agency_group_id 
-    from ${src_schema}.agency_group_assoc 
-    where stops.agency_id = agency_group_assoc.agency_id;
-";
-$result = db_query_debug($stops_feed_id_query);
 
 
 # This query refreshes the first arrivals.
