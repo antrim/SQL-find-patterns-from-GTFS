@@ -1,4 +1,12 @@
-#!/usr/bin/psql -f 
-#!/usr/bin/env psql -f 
+#!/bin/bash
+# Use sed so psql sees the same line numbers in the input file, and it is
+# easier to find errors based on their line number.
+sed '1,5s/.*//;' $0 | psql -f -
+exit 0
+-- begin psql
 
 \echo 'hello, world'
+
+select 1/0;
+
+
