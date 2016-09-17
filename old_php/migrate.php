@@ -84,7 +84,23 @@ $truncate_migrate_tables_query = "
 
 $truncate_migrate_tables_result = db_query_debug($truncate_migrate_tables_query);
 
-$migrate_agency_query  = "
+$migrate_feeds_query  = "
+    INSERT INTO {$dst_schema}.feeds
+        (feed_id
+        , name, contact_email
+        , contact_url, license, last_modified)  
+   SELECT DISTINCT 
+         agency_groups.agency_group_id as feed_id
+       , group_name AS name, feed_contact_email
+       , feed_contact_url, feed_license, agency_groups.last_modified 
+    FROM {$src_schema}.agency_groups 
+    INNER JOIN {$src_schema}.agency_group_assoc 
+            ON agency_group_assoc.agency_group_id = agency_groups.agency_group_id 
+    WHERE agency_group_assoc.agency_id NOT IN ($skip_agency_id_string)";
+$migrate_feeds_result = db_query_debug($migrate_feeds_query);
+
+
+$migrate_agencies_query  = "
     INSERT INTO {$dst_schema}.agencies
         (agency_id, agency_id_import, agency_url, agency_timezone, agency_lang_id
        , agency_name, agency_short_name, agency_phone, agency_fare_url, agency_info
@@ -99,12 +115,8 @@ $migrate_agency_query  = "
     WHERE 
         agency_id not in ($skip_agency_id_string) 
     ";
-/*
-        -- agency.agency_id IN ($agency_string) 
- */
 
-
-$migrate_agency_result = db_query_debug($migrate_agency_query);
+$migrate_agencies_result = db_query_debug($migrate_agencies_query);
 
 
 /*
@@ -251,21 +263,6 @@ ORDER BY pattern_id, timed_pattern_id ASC, stop_times.stop_sequence ASC";
 $migrate_timed_pattern_stops_nonnormalized_result = db_query_debug($migrate_timed_pattern_stops_nonnormalized_query);
 
 
-$migrate_feeds_query  = "
-    INSERT INTO {$dst_schema}.feeds
-        (feed_id
-        , name, contact_email
-        , contact_url, license, last_modified)  
-   SELECT DISTINCT 
-         agency_groups.agency_group_id as feed_id
-       , group_name AS name, feed_contact_email
-       , feed_contact_url, feed_license, agency_groups.last_modified 
-    FROM {$src_schema}.agency_groups 
-    INNER JOIN {$src_schema}.agency_group_assoc 
-            ON agency_group_assoc.agency_group_id = agency_groups.agency_group_id 
-    WHERE agency_group_assoc.agency_id NOT IN ($skip_agency_id_string)";
-$migrate_feeds_result = db_query_debug($migrate_feeds_query);
-
 
 $migrate_zones_query = "
     INSERT INTO {$dst_schema}.zones
@@ -300,6 +297,17 @@ $least_unused_zone_id = db_fetch_array($result)[0];
 echo "<br />\n setval: least_unused_zone_id $least_unused_zone_id";
 
 
+// patterns.sql
+// some patterns may be used by multiple routes/directions!!!!
+// one way to test this is: SELECT DISTINCT ON (pattern_id) agency_id, pattern_id, route_id, direction_id
+$migrate_pattern_query  = "
+    INSERT into {$dst_schema}.patterns (agency_id, pattern_id, route_id, direction_id)
+    SELECT DISTINCT agency_id, pattern_id, route_id, direction_id
+    FROM {$dst_schema}.timed_pattern_stops_nonnormalized
+    ORDER BY  pattern_id, agency_id, route_id, direction_id";
+$result = db_query_debug($migrate_pattern_query);
+
+
 // pattern_stop.sql
 $migrate_pattern_stop_query  = "
     INSERT into {$dst_schema}.pattern_stops
@@ -308,7 +316,15 @@ $migrate_pattern_stop_query  = "
     ORDER BY agency_id, pattern_id, \"stop_order\"";
 $result = db_query_debug($migrate_pattern_stop_query);
 
-// timed_pattern_intervals.sql
+// timed_pattern.sql
+$migrate_timed_pattern_query  = "
+    INSERT into {$dst_schema}.timed_patterns (agency_id, timed_pattern_id, pattern_id)
+    SELECT DISTINCT agency_id, timed_pattern_id, pattern_id
+    FROM {$dst_schema}.timed_pattern_stops_nonnormalized
+    ORDER BY agency_id, pattern_id, timed_pattern_id";
+$result = db_query_debug($migrate_timed_pattern_query);
+
+// timed_pattern_stops
 $migrate_timed_pattern_stop_query  = "
     INSERT into {$dst_schema}.timed_pattern_stops 
         (agency_id, timed_pattern_id, \"stop_order\", stop_id, arrival_time, departure_time
@@ -319,13 +335,7 @@ $migrate_timed_pattern_stop_query  = "
     ORDER BY agency_id, timed_pattern_id, \"stop_order\"";
 $result = db_query_debug($migrate_timed_pattern_stop_query);
 
-// timed_pattern.sql
-$migrate_timed_pattern_query  = "
-    INSERT into {$dst_schema}.timed_patterns (agency_id, timed_pattern_id, pattern_id)
-    SELECT DISTINCT agency_id, timed_pattern_id, pattern_id
-    FROM {$dst_schema}.timed_pattern_stops_nonnormalized
-    ORDER BY agency_id, pattern_id, timed_pattern_id";
-$result = db_query_debug($migrate_timed_pattern_query);
+
 
 // routes.sql
 $migrate_routes_stop_query  = "
@@ -380,16 +390,6 @@ $result = db_query_debug($all_routes_wildcard_query);
 
 
 
-// patterns.sql
-// some patterns may be used by multiple routes/directions!!!!
-// one way to test this is: SELECT DISTINCT ON (pattern_id) agency_id, pattern_id, route_id, direction_id
-$migrate_pattern_query  = "
-    INSERT into {$dst_schema}.patterns (agency_id, pattern_id, route_id, direction_id)
-    SELECT DISTINCT agency_id, pattern_id, route_id, direction_id
-    FROM {$dst_schema}.timed_pattern_stops_nonnormalized
-    ORDER BY  pattern_id, agency_id, route_id, direction_id";
-$result = db_query_debug($migrate_pattern_query);
-
 
 // continuing with patterns.sql
 // ALERT! Some patterns are on multiple routes. I need to figure out how to 
@@ -412,7 +412,7 @@ $migrate_headsigns_query_original  = "
     INSERT into {$dst_schema}.headsigns (agency_id, headsign_id, headsign)
     SELECT DISTINCT  agency_id, trip_headsign_id as headsign_id, trip_headsign AS headsign
     FROM {$dst_schema}.timed_pattern_stops_nonnormalized 
-    WHERE trip_headsign_id IS NOT NULL 
+    HERE trip_headsign_id IS NOT NULL 
           AND trip_headsign IS NOT NULL
     UNION
     SELECT DISTINCT  agency_id, stop_headsign_id as headsign_id, stop_headsign AS headsign
@@ -492,20 +492,21 @@ $result = db_query_debug($migrate_blocks_query);
  */
 $migrate_stops_query  = "
     INSERT into {$dst_schema}.stops 
-        (agency_id, stop_id, stop_code, platform_code, location_type
+        ( feed_id, stop_id, stop_code, platform_code, location_type
         , parent_station_id, name, stop_desc, stop_comments
         , point
         , zone_id
         , city, direction_id, url, enabled, timezone
         )
     SELECT 
-          s.agency_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
+          a.feed_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
         , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments
         , ST_SetSRID(ST_Point(stop_lon, stop_lat), 4326)::GEOGRAPHY as point
         , z.zone_id 
         , s.city, direction_id, stop_url, publish_status AS enabled, stop_timezone
     FROM {$src_schema}.stops s
     LEFT JOIN {$src_schema}.zones z USING (zone_id)
+    JOIN {$dst_schema}.agencies a ON s.agency_id = a.agency_id
     WHERE 
         s.agency_id IS NOT NULL
         AND s.agency_id IN (select agency_id from {$dst_schema}.agencies) 
@@ -515,6 +516,7 @@ $result = db_query_debug($migrate_stops_query);
 
 
 // Set feed_id for stops.
+/*
 $stops_feed_id_query = "
     update ${dst_schema}.stops 
         set feed_id = agency_group_assoc.agency_group_id 
@@ -522,6 +524,7 @@ $stops_feed_id_query = "
     where stops.agency_id = agency_group_assoc.agency_id;
 ";
 $result = db_query_debug($stops_feed_id_query);
+ */
 
 
 db_query_debug("

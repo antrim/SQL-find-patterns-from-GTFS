@@ -24,6 +24,7 @@ $skip_agency_id_string =  "210, 40, 231, 523, 567";
 
 # Ed: note that testing has begun as of 2016-08-09.
 # Don't set this to migrate unless you're testing after-hours!
+# That, or use a transaction!
 # $table_prefix = "migrate";
 
 # $src_schema = "public";

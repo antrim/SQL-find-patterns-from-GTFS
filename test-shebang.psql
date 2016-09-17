@@ -1,0 +1,4 @@
+#!/usr/bin/psql -f 
+#!/usr/bin/env psql -f 
+
+\echo 'hello, world'

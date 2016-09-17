@@ -1,0 +1,22 @@
+/* patterns.sql
+ some patterns may be used by multiple routes/directions!!!!
+ one way to test this is: SELECT DISTINCT ON (pattern_id) agency_id, pattern_id, route_id, direction_id
+ */
+
+    INSERT INTO :"DST_SCHEMA".patterns (agency_id, pattern_id, route_id, direction_id)
+    SELECT DISTINCT agency_id, pattern_id, route_id, direction_id
+    FROM :"DST_SCHEMA".timed_pattern_stops_nonnormalized
+    ORDER BY  pattern_id, agency_id, route_id, direction_id;
+
+
+-- continuing with patterns.sql
+-- ALERT! Some patterns are on multiple routes. I need to figure out how to 
+-- handle this. <-- come back here and play -- test results
+
+-- SELECT count(distinct agency_id), pattern_id, count(distinct route_id) as 
+-- route_count, count(distinct direction_id) as direction_count
+-- FROM :"DST_SCHEMA".timed_pattern_stops_nonnormalized
+-- group by pattern_id
+-- ORDER BY route_count DESC, direction_count DESC
+
+
