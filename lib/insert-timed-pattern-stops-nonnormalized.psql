@@ -65,7 +65,6 @@ WITH
 
        ON sequences.trip_id = time_intervals_result.trip_id
        WHERE 
-           stops.
            trips.agency_id NOT IN (:SKIP_AGENCY_ID_STRING)
            AND trips.based_on IS NULL
      GROUP BY stops_pattern, arrival_time_intervals, departure_time_intervals

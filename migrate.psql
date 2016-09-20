@@ -1,3 +1,10 @@
+/*
+ for vim.
+
+ let $SRC_SCHEMA = 'public'
+ let $DST_SCHEMA = 'play_migrate'
+ let g:simpledb_prelude_query = '\i migrate_util.psql'
+*/
 
 \ir migrate_util.psql
 
@@ -25,9 +32,7 @@
 -- this takes a long time. can we break it up into smaller parts?
 \ir lib/insert-timed-pattern-stops-nonnormalized.psql
 
-
 \ir lib/insert-zones.psql
-
 
 \ir lib/insert-patterns.psql
 \ir lib/insert-pattern-stops.psql
@@ -71,7 +76,7 @@
 
 \ir lib/refresh-snap-first-arrivals-for-trip.psql
 
--- todo: dev_patterns_trips might not be a good name for this table.
+-- TODO: dev_patterns_trips might not be a good name for this table.
 -- what naming convention can we use to indicate that this is for import use only?
 -- it's the same class of table as timed_pattern_stops_nonnormalized
 \ir lib/refresh-dev-patterns-trips.psql
