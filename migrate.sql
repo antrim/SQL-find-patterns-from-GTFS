@@ -3,23 +3,26 @@
 
  let $SRC_SCHEMA = 'public'
  let $DST_SCHEMA = 'play_migrate'
- let g:simpledb_prelude_query = '\i migrate_util.psql'
+ let $DST_SCHEMA = ''' oh crap --'
+ let $DST_SCHEMA = 'migrate'
+ let $PGHOST = 'localhost'
+ let $PGUSER = 'ed'
+ let $PGPORT = '5432'
+ let $PGDATABASE = 'trillium_gtfs_production_2016_09_20'
+ let g:simpledb_prelude_query = '\i migrate_util.sql'
+
+ for testing connection settings.
+
+ \l
+ \dt
+ select current_database();
+
 */
 
 \ir migrate_util.sql
 
 \echo SRC_SCHEMA: :"SRC_SCHEMA"
 \echo DST_SCHEMA: :"DST_SCHEMA"
-
-/*
- Aaron. So apparently trillium_gtfs_web will never be able to run truncate on the 
- table created by aaron_super with an autoincrement counter.
- http://dba.stackexchange.com/questions/58282/error-must-be-owner-of-relation-user-account-id-seq
-
- Ed. Addressed via changing owner of sequence, for example:
- ALTER SEQUENCE play_migrate_blocks_block_id_seq OWNER TO trillium_gtfs_group ;
-
-*/
 
 -- BEGIN TRANSACTION;
 
@@ -37,7 +40,7 @@
 \ir lib/insert-patterns.sql
 \ir lib/insert-pattern-stops.sql
 \ir lib/insert-timed-patterns.sql
-\ir lib/insert-timed-pattern-stops.psql 
+\ir lib/insert-timed-pattern-stops.sql 
 
 
 \ir lib/insert-routes.sql

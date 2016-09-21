@@ -40,51 +40,54 @@ WHERE generated_names.pattern_id = :"DST_SCHEMA".patterns.pattern_id;
 
 WITH
 patterns_with_stops_difference AS 
-(select
-    p.route_id, p.pattern_id, primary_pattern_id  
-  , array_length(s_agg.stop_ids, 1) as n_stops
-  , coalesce(array_length(s_agg.stop_ids - primary_s_agg.primary_stop_ids, 1), 0) as n_added_stops
-  , coalesce(array_length(primary_s_agg.primary_stop_ids - s_agg.stop_ids, 1), 0) as n_removed_stops
-  , s_agg.stop_ids - primary_s_agg.primary_stop_ids as added_stop_ids
-  , primary_s_agg.primary_stop_ids - s_agg.stop_ids as removed_stop_ids
-  , s_agg.stop_ids
-from :"DST_SCHEMA".patterns p
-JOIN :"DST_SCHEMA".route_primary_patterns AS route_primary_patterns using (route_id, direction_id)
-JOIN
-    ( select pattern_id, array_agg(stop_id order by stop_id) stop_ids
-      from :"DST_SCHEMA".pattern_stops group by pattern_id) s_agg
-    using (pattern_id)
-JOIN
-    ( select pattern_id, array_agg(stop_id order by stop_id) primary_stop_ids
-      from :"DST_SCHEMA".pattern_stops group by pattern_id) primary_s_agg
-    on (primary_s_agg.pattern_id = route_primary_patterns.primary_pattern_id)  )
+(
+    SELECT
+        p.route_id, p.pattern_id, primary_pattern_id  
+        , array_length(s_agg.stop_ids, 1) as n_stops
+        , coalesce(array_length(s_agg.stop_ids - primary_s_agg.primary_stop_ids, 1), 0) as n_added_stops
+        , coalesce(array_length(primary_s_agg.primary_stop_ids - s_agg.stop_ids, 1), 0) as n_removed_stops
+        , s_agg.stop_ids - primary_s_agg.primary_stop_ids as added_stop_ids
+            , primary_s_agg.primary_stop_ids - s_agg.stop_ids as removed_stop_ids
+        , s_agg.stop_ids
+    FROM :"DST_SCHEMA".patterns p
+    JOIN :"DST_SCHEMA".route_primary_patterns AS route_primary_patterns using (route_id, direction_id)
+    JOIN
+    ( 
+        SELECT pattern_id, array_agg(stop_id order by stop_id) stop_ids
+        FROM :"DST_SCHEMA".pattern_stops group by pattern_id) s_agg
+        USING (pattern_id)
+    JOIN
+    ( 
+        SELECT pattern_id, array_agg(stop_id order by stop_id) primary_stop_ids
+        FROM :"DST_SCHEMA".pattern_stops group by pattern_id) primary_s_agg
+    ON (primary_s_agg.pattern_id = route_primary_patterns.primary_pattern_id))
 
-,generated_names AS
-(select
-    route_id
-  , pattern_id
-  , primary_pattern_id
-  , n_added_stops
-  , n_removed_stops
-  , case when pattern_id = primary_pattern_id 
-        then 'Primary' 
-        else case when (n_added_stops > 3 or n_added_stops = 0)
-                 then '+ '  || n_added_stops || ' stops'
-                 else '+ '  || (SELECT string_agg(name, ' + ')
-                                FROM  :"DST_SCHEMA".stops 
-                                WHERE stop_id  IN (SELECT unnest(added_stop_ids))) END
-          || case when (n_removed_stops > 3 or n_removed_stops = 0)
-                 then ' - ' || n_removed_stops || ' stops'
-                 else ' - ' || (SELECT string_agg(name, ' - ') 
-                                FROM  :"DST_SCHEMA".stops 
-                                WHERE stop_id  IN (SELECT unnest(removed_stop_ids))) END
-        end
-   as generated_name
-from patterns_with_stops_difference
-order by route_id, pattern_id)
+, generated_names AS
+(
+    SELECT
+        route_id
+        , pattern_id
+        , primary_pattern_id
+        , n_added_stops
+        , n_removed_stops
+        , ( CASE when pattern_id = primary_pattern_id 
+            THEN 'Primary' 
+            ELSE CASE when (n_added_stops > 3 or n_added_stops = 0)
+                    THEN '+ '  || n_added_stops || ' stops'
+                    ELSE '+ '  || (SELECT string_agg(name, ' + ')
+                                    FROM  :"DST_SCHEMA".stops 
+                                    WHERE stop_id  IN (SELECT unnest(added_stop_ids))) END
+            || CASE when (n_removed_stops > 3 or n_removed_stops = 0)
+                    THEN ' - ' || n_removed_stops || ' stops'
+                    ELSE ' - ' || (SELECT string_agg(name, ' - ') 
+                                    FROM  :"DST_SCHEMA".stops 
+                                    WHERE stop_id  IN (SELECT unnest(removed_stop_ids))) END
+            END ) AS generated_name
+    FROM patterns_with_stops_difference
+    ORDER by route_id, pattern_id)
 
-update :"DST_SCHEMA".patterns SET name = generated_name
-from generated_names
-where generated_names.pattern_id = :"DST_SCHEMA".patterns.pattern_id;
+UPDATE :"DST_SCHEMA".patterns SET name = generated_name
+FROM generated_names
+WHERE generated_names.pattern_id = :"DST_SCHEMA".patterns.pattern_id;
 
 
