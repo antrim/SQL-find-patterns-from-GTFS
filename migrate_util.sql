@@ -1,9 +1,14 @@
 
-\set SRC_SCHEMA `echo ${SRC_SCHEMA:-public}`
-\set DST_SCHEMA `echo ${DST_SCHEMA:-play_migrate}`
+/* 
+    We set these now in migrate_settings_from_environment.sql, so that it's
+    possible to interactively change settings when doing migration, while
+    retaining the option to read them from the environment.
+*/
+-- \set SRC_SCHEMA `echo ${SRC_SCHEMA:-public}`
+-- \set DST_SCHEMA `echo ${DST_SCHEMA:-play_migrate}`
 
-\set SKIP_AGENCY_ID_STRING '40, 210, 231, 523, 567'
-\set SKIP_TRIP_ID_STRING '601686'
+-- \set SKIP_AGENCY_ID_STRING '40, 210, 231, 523, 567'
+-- \set SKIP_TRIP_ID_STRING '601686'
 
 /*
     psql_vars_temp_view allows us to use our psql variables from within a DO block.

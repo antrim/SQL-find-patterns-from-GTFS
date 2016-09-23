@@ -6,38 +6,60 @@
  Note also: we're resetting wheelchair_boarding to the default value of 0 per
  https://github.com/trilliumtransit/GTFSManager/issues/378
  */
-    INSERT into :"DST_SCHEMA".stops 
-        ( feed_id, stop_id, stop_code, platform_code, location_type
-        , parent_station_id, name, stop_desc, stop_comments
-        , point
-        , zone_id
-        , city, direction_id, url, enabled, timezone
-        )
-    SELECT 
-          a.feed_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
-        , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments
-        , ST_SetSRID(ST_Point(stop_lon, stop_lat), 4326)::GEOGRAPHY as point
-        , z.zone_id 
-        , s.city, direction_id, stop_url, publish_status AS enabled, stop_timezone
-    FROM :"SRC_SCHEMA".stops s
-    LEFT JOIN :"SRC_SCHEMA".zones z USING (zone_id)
-    JOIN :"DST_SCHEMA".agencies a ON s.agency_id = a.agency_id
-    WHERE 
-        s.agency_id IS NOT NULL
-        AND s.agency_id IN (select agency_id from :"DST_SCHEMA".agencies) ;
 
 
--- Set feed_id for stops.
-/*
-$stops_feed_id_query = "
-    update :"DST_SCHEMA".stops 
-        set feed_id = agency_group_assoc.agency_group_id 
-    from :"SRC_SCHEMA".agency_group_assoc 
-    where stops.agency_id = agency_group_assoc.agency_id;
-;
-$result = db_query_debug($stops_feed_id_query);
- */
+-- SAVEPOINT insert_stops;
+-- ROLLBACK TO SAVEPOINT insert_stops;
+-- RELEASE SAVEPOINT insert_stops;
 
+ALTER TABLE :"DST_SCHEMA".stops DISABLE TRIGGER  stops_timezone_trg;
+
+INSERT into :"DST_SCHEMA".stops 
+    ( feed_id, stop_id, stop_code, platform_code, location_type
+    , parent_station_id, name, stop_desc, stop_comments
+    , point
+    , zone_id
+    , city, direction_id, url, enabled 
+    -- test trigger stops_timezone_trg by not including timezone in INSERT
+    -- , timezone
+    )
+SELECT 
+        a.feed_id, s.stop_id, s.stop_code, s.platform_code, s.location_type
+    , s.parent_station, s.stop_name, s.stop_desc, s.stop_comments
+    , ST_SetSRID(ST_Point(stop_lon, stop_lat), 4326)::GEOGRAPHY as point
+    , z.zone_id 
+    , s.city, direction_id, stop_url, publish_status AS enabled 
+    -- test trigger stops_timezone_trg by not including timezone in INSERT
+    -- , stop_timezone
+FROM :"SRC_SCHEMA".stops s
+LEFT JOIN :"SRC_SCHEMA".zones z USING (zone_id)
+JOIN :"DST_SCHEMA".agencies a ON s.agency_id = a.agency_id
+WHERE 
+    s.agency_id IS NOT NULL
+    AND s.agency_id IN (select agency_id from :"DST_SCHEMA".agencies) ;
+
+-- This is faster than using trigger for each and every row.
+UPDATE :"DST_SCHEMA".stops SET timezone = point_timezone(point);
+
+ALTER TABLE :"DST_SCHEMA".stops ENABLE  TRIGGER  stops_timezone_trg;
+
+/* 
+
+    SELECT count(*) 
+    from :"DST_SCHEMA".stops 
+    where timezone is null;
+
+    Fraction of earth covered by timezone table.
+    Earth is 510072000000000 square meters according to Wikipedia "Earth" page.
+
+    SELECT sum(ST_area(geog)) / 510072000000000 AS fraction_covered
+    FROM :"DST_SCHEMA".tz_world_mp_including_territorial_waters ;
+
+
+*/
+
+/* 
+Ed 2016-09-21. Deprecated in favor of stops_timezone_trg which uses geography, rather than agency settings.
 
 UPDATE :"DST_SCHEMA".stops SET timezone = NULL 
 WHERE length(timezone) = 0;
@@ -59,3 +81,4 @@ WHERE
     AND stops.timezone IS NULL ;
 
 
+*/

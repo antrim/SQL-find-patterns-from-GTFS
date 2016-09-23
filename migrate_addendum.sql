@@ -1,5 +1,5 @@
 
-\ir migrate_util.psql
+\ir migrate_util.sql
 
 -- db_query_debug("BEGIN TRANSACTION;");
 
