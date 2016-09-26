@@ -39,7 +39,7 @@ WHERE
     AND s.agency_id IN (select agency_id from :"DST_SCHEMA".agencies) ;
 
 -- This is faster than using trigger for each and every row.
-UPDATE :"DST_SCHEMA".stops SET timezone = point_timezone(point);
+UPDATE :"DST_SCHEMA".stops SET timezone = :"DST_SCHEMA".point_timezone(point);
 
 ALTER TABLE :"DST_SCHEMA".stops ENABLE  TRIGGER  stops_timezone_trg;
 

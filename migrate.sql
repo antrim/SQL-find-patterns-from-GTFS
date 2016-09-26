@@ -19,6 +19,8 @@
 
 */
 
+\set migrate_start_time = `date`
+
 \ir migrate_util.sql
 
 \echo SRC_SCHEMA: :"SRC_SCHEMA"
@@ -100,4 +102,7 @@
 -- COMMIT TRANSACTION
 
 \echo 'Migration successful'
+\set migrate_end_time = `date`
+
+\echo started: :migrate_start_time finished: :migrate_end_time
 
