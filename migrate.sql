@@ -23,8 +23,7 @@
 
 \ir migrate_util.sql
 
-\echo SRC_SCHEMA: :"SRC_SCHEMA"
-\echo DST_SCHEMA: :"DST_SCHEMA"
+\ir print_settings.sql
 
 -- BEGIN TRANSACTION;
 
@@ -39,13 +38,15 @@
 
 \ir lib/insert-zones.sql
 
+\ir lib/insert-stops.sql
+
+\ir lib/insert-routes.sql
+
 \ir lib/insert-patterns.sql
 \ir lib/insert-pattern-stops.sql
 \ir lib/insert-timed-patterns.sql
 \ir lib/insert-timed-pattern-stops.sql 
 
-
-\ir lib/insert-routes.sql
 
 \ir lib/insert-headsigns.sql
 
@@ -55,17 +56,16 @@
 
 \ir lib/insert-calendar-bounds.sql
 
+\ir lib/insert-calendar-dates.sql
+
 \ir lib/insert-blocks.sql
 
-\ir lib/insert-stops.sql
 
 -- All lines in the file are commented out, this just shows the order where it
 -- used to be executed. 
 \ir lib/insert-patterns-old.sql
 
 \ir lib/insert-shape-segments.sql
-
-\ir lib/insert-calendar-dates.sql
 
 \ir lib/insert-fare-attributes.sql
 

@@ -14,7 +14,8 @@ INSERT INTO :"DST_SCHEMA".timed_pattern_stops_nonnormalized
     , departure_time_intervals, route_id, stop_headsign_id)
 
 WITH 
-  pattern_time_intervals AS (
+
+pattern_time_intervals AS (
     SELECT MIN(trips.trip_id) as one_trip
          , array_agg( trips.trip_id ORDER BY sequences.min_arrival_time ) AS trips_list
          , sequences.stops_pattern, arrival_time_intervals, departure_time_intervals
@@ -65,7 +66,7 @@ WITH
 
        ON sequences.trip_id = time_intervals_result.trip_id
        WHERE 
-           trips.agency_id NOT IN (:SKIP_AGENCY_ID_STRING)
+           trips.agency_id IN (SELECT agency_id FROM :"DST_SCHEMA".agencies)
            AND trips.based_on IS NULL
      GROUP BY stops_pattern, arrival_time_intervals, departure_time_intervals
             , trips.agency_id, trips.route_id, trips.direction_id
@@ -77,11 +78,12 @@ WITH
          , MIN( stop_times.departure_time) AS min_departure_time
     FROM pattern_time_intervals
     INNER JOIN  :"SRC_SCHEMA".stop_times 
-           ON pattern_time_intervals.one_trip = stop_times.trip_id 
-           WHERE stop_times.agency_id NOT IN (:SKIP_AGENCY_ID_STRING)
-    GROUP BY  one_trip, trips_list, stops_pattern, arrival_time_intervals
-            , departure_time_intervals, pattern_time_intervals.agency_id, route_id, direction_id
-
+        ON pattern_time_intervals.one_trip = stop_times.trip_id 
+    WHERE 
+        stop_times.agency_id IN (SELECT agency_id FROM :"DST_SCHEMA".agencies)
+    GROUP BY
+        one_trip, trips_list, stops_pattern, arrival_time_intervals, 
+        departure_time_intervals, pattern_time_intervals.agency_id, route_id, direction_id
 )
 
 , timed_patterns AS (
@@ -91,15 +93,19 @@ WITH
 , stop_patterns AS (
 
     WITH unique_patterns AS(
-    SELECT DISTINCT string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern,trips.route_id
-                  , trips.direction_id
-         FROM :"SRC_SCHEMA".stop_times
-         INNER JOIN :"SRC_SCHEMA".trips on stop_times.trip_id = trips.trip_id
-         WHERE 
-             trips.agency_id NOT IN (:SKIP_AGENCY_ID_STRING) 
-             AND trips.based_on IS NULL
-         GROUP BY stop_times.trip_id,trips.route_id,trips.direction_id)
-    SELECT unique_patterns.stops_pattern,route_id,direction_id,row_number() over() as pattern_id 
+        SELECT DISTINCT
+            string_agg(stop_times.stop_id::text , ', ' ORDER BY stop_times.stop_sequence ASC) AS stops_pattern,
+            trips.route_id, trips.direction_id
+        FROM :"SRC_SCHEMA".stop_times
+        INNER JOIN :"SRC_SCHEMA".trips on stop_times.trip_id = trips.trip_id
+        WHERE 
+            trips.agency_id IN (SELECT agency_id FROM :"DST_SCHEMA".agencies)
+            AND trips.based_on IS NULL
+        GROUP BY stop_times.trip_id,trips.route_id,trips.direction_id)
+
+    SELECT
+        unique_patterns.stops_pattern, route_id, direction_id,
+        row_number() over() as pattern_id 
     FROM unique_patterns
 )
 
@@ -112,24 +118,38 @@ SELECT timed_patterns.agency_id, agency.agency_name, routes.route_short_name
      , CASE WHEN stop_times.arrival_time IS NOT NULL 
            THEN (stop_times.arrival_time - min_arrival_time) 
            ELSE NULL 
-       END as arrival_time
+       END AS arrival_time
      , CASE WHEN stop_times.departure_time IS NOT NULL 
            THEN (stop_times.departure_time - min_departure_time) 
            ELSE NULL
-       END as departure_time
-     , COALESCE(pickup_type,0)
+       END AS departure_time
+     , COALESCE(pickup_type, 0)
      , COALESCE(drop_off_type, 0)
      , one_trip, trips_list, stop_patterns.stops_pattern, arrival_time_intervals
      , departure_time_intervals, trips.route_id, stop_times.headsign_id as stop_headsign_id 
 FROM timed_patterns
 LEFT JOIN :"SRC_SCHEMA".stop_times ON timed_patterns.one_trip = stop_times.trip_id
-INNER JOIN stop_patterns ON (timed_patterns.stops_pattern = stop_patterns.stops_pattern 
-                             AND timed_patterns.route_id = stop_patterns.route_id 
-                             AND timed_patterns.direction_id = stop_patterns.direction_id)
+INNER JOIN stop_patterns
+    ON (timed_patterns.stops_pattern = stop_patterns.stops_pattern 
+        AND timed_patterns.route_id = stop_patterns.route_id 
+        AND timed_patterns.direction_id = stop_patterns.direction_id)
 INNER JOIN :"SRC_SCHEMA".trips ON stop_times.trip_id = trips.trip_id
 INNER JOIN :"SRC_SCHEMA".routes ON trips.route_id = routes.route_id
 LEFT JOIN :"SRC_SCHEMA".directions ON trips.direction_id = directions.direction_id
 LEFT JOIN :"SRC_SCHEMA".headsigns ON trips.headsign_id = headsigns.headsign_id
 INNER JOIN :"SRC_SCHEMA".agency ON stop_times.agency_id = agency.agency_id
 ORDER BY pattern_id, timed_pattern_id ASC, stop_times.stop_sequence ASC;
+
+
+
+WITH 
+patterns_missing_stops AS (
+    SELECT DISTINCT pattern_id
+    FROM :"DST_SCHEMA".timed_pattern_stops_nonnormalized
+    WHERE stop_id NOT IN (SELECT stop_id FROM :"SRC_SCHEMA".stops)
+)
+DELETE FROM :"DST_SCHEMA".timed_pattern_stops_nonnormalized 
+USING patterns_missing_stops
+WHERE timed_pattern_stops_nonnormalized.pattern_id IN (SELECT pattern_id FROM patterns_missing_stops);
+
 

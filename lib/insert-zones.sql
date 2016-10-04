@@ -20,8 +20,14 @@ VALUES (-411
     );
 
 
+/*
+ Ed 2016-10-04
+ This is obsolete, we up date all sequences in migrate_addendum.sql
+
 \set DST_SCHEMA_ZONE_CLASS :DST_SCHEMA .zones_zone_id_seq
 SELECT pg_catalog.setval(:'DST_SCHEMA_ZONE_CLASS'::regclass, 1 + MAX(zone_id))
 FROM :"DST_SCHEMA".zones;
 \unset DST_SCHEMA_ZONE_CLASS 
+*/
 
+ */

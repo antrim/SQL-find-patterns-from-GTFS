@@ -7,6 +7,6 @@
     FROM :"SRC_SCHEMA".fare_rider_categories
     WHERE
         agency_id IN (select agency_id from :"DST_SCHEMA".agencies) 
-         ;
+        AND fare_id IN (select agency_id from :"DST_SCHEMA".fare_attributes);
 
 
